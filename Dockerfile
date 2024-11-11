@@ -2,7 +2,7 @@
 FROM golang:1.21 AS build
 
 WORKDIR /app
-COPY main.go .
+COPY . .
 RUN go build -o server main.go
 
 # 実行権限を設定
