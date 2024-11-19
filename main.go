@@ -194,6 +194,7 @@ import(
 	"myproject/dao"
 	"myproject/usecase"
 	"log"
+	"os"
 )
 
 func main(){
@@ -214,8 +215,18 @@ func main(){
 	// ルート設定
 	controllers.RootingRegister(registerUserController)
 
-	log.Println("Listening...")
-	if err := http.ListenAndServe(":8000", nil); err != nil {
-		log.Fatal(err)
-	}
+	// log.Println("Listening...")
+	// if err := http.ListenAndServe(":8000", nil); err != nil {
+	// 	log.Fatal(err)
+	// }
+	port := os.Getenv("PORT")
+    if port == "" {
+        port = "8000" // デフォルトのポート番号
+    }
+
+    // サーバーを起動
+    log.Printf("Listening on port %s...\n", port)
+    if err := http.ListenAndServe(":"+port, nil); err != nil {
+        log.Fatal("Failed to start server: ", err)
+    }
 }
