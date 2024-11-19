@@ -2,6 +2,10 @@
 FROM golang:1.21 AS build
 
 WORKDIR /app
+
+# Goのモジュールファイルをコピー
+COPY go.mod go.sum ./
+
 COPY . .
 RUN go build -o main main.go
 
