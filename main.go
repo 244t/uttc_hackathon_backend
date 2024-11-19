@@ -221,7 +221,7 @@ func main(){
 	// }
 	port := os.Getenv("PORT")
     if port == "" {
-        port = "8000" // デフォルトのポート番号
+        port = "8080" // デフォルトのポート番号
     }
 
     // サーバーを起動
