@@ -43,6 +43,12 @@ func NewTweetDAO (db *sql.DB) *TweetDAO{
 	return &TweetDAO{DB:db}
 }
 
+
+func (dao *TweetDAO) RegisterUser(user model.Profile) error{
+	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio) VALUES (?, ?, ?)", user.Id, user.Name, user.Bio)
+	return err
+}
+
 // //user_idをもとにユーザープロフィールを得る
 // func (dao *TweetDAO) GetUserProfile([]model.Profile,error){
 // 	var prof model.Profile
@@ -56,8 +62,3 @@ func NewTweetDAO (db *sql.DB) *TweetDAO{
 // 	return []model.Profile{prof}, nil
 
 // }
-
-func (dao *TweetDAO) RegisterUser(user model.Profile) error{
-	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio) VALUES (?, ?, ?)", user.Id, user.Name, user.Bio)
-	return err
-}
