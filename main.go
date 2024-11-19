@@ -190,7 +190,7 @@ package main
 
 import(
 	"net/http"
-	"myproject/controllers" // プロジェクト名に応じてパスを変更
+	"myproject/controllers" 
 	"myproject/dao"
 	"myproject/usecase"
 	"log"
@@ -217,10 +217,10 @@ func main(){
 	registerUserController := controllers.NewRegisterUserController(registerUserUseCase)
 
 	// ルート設定
-	controllers.RootingRegister(registerUserController)
+	r := controllers.RootingRegister(registerUserController)
 
 	log.Println("Listening...")
-	if err := http.ListenAndServe(":8000", nil); err != nil {
+	if err := http.ListenAndServe(":8000", r); err != nil {
 		log.Fatal(err)
 	}
 	
