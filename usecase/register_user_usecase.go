@@ -13,6 +13,7 @@ import (
 type UserRegister struct {
 	Name string `json:"name"`
 	Bio string `json:"bio"`
+	FireBaseId string `json:"firebase_id"`
 }
 
 type RegisterUserUseCase struct {
@@ -41,6 +42,7 @@ func (uc *RegisterUserUseCase) RegisterUser(userRegister UserRegister) error{
 		Id : ulid.String(),
 		Name: userRegister.Name,
 		Bio: userRegister.Bio,
+		FireBaseId: userRegister.FireBaseId,
 	}
 
 	// ユーザーを保存

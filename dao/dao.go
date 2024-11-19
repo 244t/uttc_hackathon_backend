@@ -4,8 +4,9 @@ import(
 	"database/sql"
 	"fmt"
 	"myproject/model"
-	"os"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"os"
 )
 
 
@@ -23,7 +24,18 @@ func NewDBConnection()(*sql.DB,error) {
 	mysqlPwd := os.Getenv("MYSQL_PWD")
 	mysqlHost := os.Getenv("MYSQL_HOST")
 	mysqlDatabase := os.Getenv("MYSQL_DATABASE")
-
+	// mysqlUser := "user"
+	// mysqlUserPwd := "password"
+	// mysqlDatabase := "mydatabase"
+	// db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3306)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
+	// if err != nil {
+	// 	log.Fatalf("fail: sql.Open, %v\n", err)
+	// }
+	// // ①-3
+	// if err := db.Ping(); err != nil {
+	// 	log.Fatalf("fail: _db.Ping, %v\n", err)
+	// }
+	// return db,nil
 	connStr := fmt.Sprintf("%s:%s@%s/%s", mysqlUser, mysqlPwd, mysqlHost, mysqlDatabase)
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
@@ -45,7 +57,7 @@ func NewTweetDAO (db *sql.DB) *TweetDAO{
 
 
 func (dao *TweetDAO) RegisterUser(user model.Profile) error{
-	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio) VALUES (?, ?, ?)", user.Id, user.Name, user.Bio)
+	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,firebase_uid,profile_img_url) VALUES (?, ?, ?, ?,?)", user.Id, user.Name, user.Bio,user.FireBaseId,"")
 	return err
 }
 
