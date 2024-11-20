@@ -6,7 +6,7 @@ import(
 	"myproject/model"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
-	// "os"
+	"os"
 )
 
 
