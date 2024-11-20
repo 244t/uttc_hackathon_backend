@@ -16,6 +16,11 @@ type UserRegister struct {
 	FireBaseId string `json:"firebase_id"`
 }
 
+
+type UserUseCase struct {
+	TweetDAO dao.TweetDAOInterface
+}
+
 type RegisterUserUseCase struct {
 	TweetDAO dao.TweetDAOInterface
 }

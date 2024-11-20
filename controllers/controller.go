@@ -4,10 +4,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func RootingRegister(registerUserController *RegisterUserController)*mux.Router{
+func RootingRegister(userController *UserController)*mux.Router{
 	r := mux.NewRouter()
 
-	r.HandleFunc("/user/create",registerUserController.CreateUser).Methods("POST")
-
+	r.HandleFunc("/user/create",userController.CreateUser).Methods("POST")
+	r.HandleFunc("/user/{userId}",userController.GetUserProfile).Methods("Get")
 	return r
 }

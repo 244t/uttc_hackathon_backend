@@ -192,7 +192,6 @@ import(
 	"net/http"
 	"myproject/controllers" 
 	"myproject/dao"
-	"myproject/usecase"
 	"log"
 	"syscall"
 	"os"
@@ -210,14 +209,11 @@ func main(){
 	closeDBWithSysCall(db)
 
 	tweetDao := dao.NewTweetDAO(db)
-	// UseCaseのインスタンスを作成
-	registerUserUseCase := usecase.NewRegisterUserUseCase(tweetDao) // 適切なDAOを渡す
-
 	// コントローラーのインスタンスを作成
-	registerUserController := controllers.NewRegisterUserController(registerUserUseCase)
+	userController:= controllers.NewUserController(tweetDao)
 
 	// ルート設定
-	r := controllers.RootingRegister(registerUserController)
+	r := controllers.RootingRegister(userController)
 
 	log.Println("Listening...")
 	if err := http.ListenAndServe(":8000", r); err != nil {
