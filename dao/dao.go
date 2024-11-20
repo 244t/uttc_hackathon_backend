@@ -6,7 +6,7 @@ import(
 	"myproject/model"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
-	"os"
+	// "os"
 )
 
 
@@ -17,6 +17,8 @@ type TweetDAO struct {
 type TweetDAOInterface interface{
 	RegisterUser(user model.Profile) error
 	GetUserProfile(userId string) (model.Profile,error)
+	GetFollowing(userId string) ([]model.Profile,error)
+	GetFollowers(userId string)([]model.Profile,error)
 }
 
 //DBへの接続を初期化
@@ -79,4 +81,80 @@ func (dao *TweetDAO) GetUserProfile(userId string) (model.Profile, error) {
 	}
 
 	return prof, nil
+}
+
+func (dao *TweetDAO) GetFollowing(userId string) ([]model.Profile, error) {
+	// INNER JOINを使用して、follower テーブルと user テーブルを結合
+	query := `
+		SELECT u.user_id, u.name, u.bio, u.profile_img_url
+		FROM follower f
+		INNER JOIN user u ON f.following_user_id = u.user_id
+		WHERE f.user_id = ?
+	`
+
+	// フォローしているユーザーのプロフィールを格納するスライス
+	var profiles []model.Profile
+
+	// フォローしているユーザーのプロフィール情報を取得
+	rows, err := dao.DB.Query(query, userId)
+	if err != nil {
+		log.Printf("Error fetching following user profiles for userId %s: %v", userId, err)
+		return nil, fmt.Errorf("could not fetch following user profiles: %w", err)
+	}
+	defer rows.Close()
+
+	// rowsからプロフィール情報を読み取って、profilesスライスに追加
+	for rows.Next() {
+		var profile model.Profile
+		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio); err != nil {
+			log.Printf("Error scanning profile: %v", err)
+			return nil, fmt.Errorf("could not scan profile: %w", err)
+		}
+		profiles = append(profiles, profile)
+	}
+
+	// フォローしているユーザーのプロフィールを返す
+	return profiles, nil
+}
+
+
+func (dao *TweetDAO) GetFollowers(userId string) ([]model.Profile, error) {
+	// フォローしているユーザーのプロフィールを取得するためのSQLクエリ
+	query := `
+		SELECT u.user_id, u.name, u.bio, u.profile_img_url
+		FROM user u
+		INNER JOIN follower f ON u.user_id = f.user_id
+		WHERE f.following_user_id = ?
+	`
+
+	// フォローしているユーザーのプロフィールを格納するスライス
+	var profiles []model.Profile
+
+	// データベースから情報を取得
+	rows, err := dao.DB.Query(query, userId)
+	if err != nil {
+		log.Printf("Error fetching followers for userId %s: %v", userId, err)
+		return nil, fmt.Errorf("could not fetch followers: %w", err)
+	}
+	defer rows.Close()
+
+	// 取得した各行を処理
+	for rows.Next() {
+		var profile model.Profile
+		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio); err != nil {
+			log.Printf("Error scanning profile for userId %s: %v", userId, err)
+			continue
+		}
+		// プロフィールをスライスに追加
+		profiles = append(profiles, profile)
+	}
+
+	// エラーがあれば返す
+	if err := rows.Err(); err != nil {
+		log.Printf("Error iterating over rows: %v", err)
+		return nil, err
+	}
+
+	// フォローしているユーザーのプロフィールを返す
+	return profiles, nil
 }
