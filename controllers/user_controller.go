@@ -59,6 +59,8 @@ import (
 type UserController struct {
 	RegisterUserUseCase *usecase.RegisterUserUseCase
 	GetProfileUserUseCase *usecase.GetProfileUserUseCase
+	GetFollowingUserUseCase *usecase.GetFollowingUserUseCase
+	GetFollowersUserUseCase *usecase.GetFollowersUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -67,11 +69,15 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	// UseCaseのインスタンスを作成
 	registerUserUseCase := usecase.NewRegisterUserUseCase(db)
 	getProfileUserUseCase := usecase.NewGetProfileUserUseCase(db)
+	getFollowingUserUseCase := usecase.NewGetFollowingUserUseCase(db)
+	getFollowersUserUseCase := usecase.NewGetFollowersUserUseCase(db)
 
 	// UserControllerを作成して返す
 	return &UserController{
 		RegisterUserUseCase: registerUserUseCase,
 		GetProfileUserUseCase: getProfileUserUseCase,
+		GetFollowingUserUseCase: getFollowingUserUseCase,
+		GetFollowersUserUseCase: getFollowersUserUseCase,
 	}
 }
 
@@ -108,4 +114,36 @@ func (c *UserController) GetUserProfile(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Error encoding profile", http.StatusInternalServerError)
 		return
 	}
+}
+
+//userIdが示すuserがフォローしているアカウントを返す
+func (c *UserController) GetFollowing(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r) // mux.Varsでパスパラメータを取得
+	userID := vars["userId"]
+
+	// GetFollowingUserUseCaseを呼び出してフォローしている人のプロフィールを取得
+	users, err := c.GetFollowingUserUseCase.GetFollowing(userID)
+	if err != nil {
+		http.Error(w, "Error fetching following profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+//userIdが示すuserがフォローしているアカウントを返す
+func (c *UserController) GetFollowers(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r) // mux.Varsでパスパラメータを取得
+	userID := vars["userId"]
+
+	// GetFollowersUserUseCaseを呼び出してフォローしている人のプロフィールを取得
+	users, err := c.GetFollowersUserUseCase.GetFollowers(userID)
+	if err != nil {
+		http.Error(w, "Error fetching following profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }

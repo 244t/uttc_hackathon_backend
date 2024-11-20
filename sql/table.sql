@@ -35,7 +35,7 @@ CREATE TABLE follower (
     user_id VARCHAR(255),
     followed_user_id VARCHAR(255),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, followed_user_id),
+    PRIMARY KEY (user_id, following_user_id),
     FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
     FOREIGN KEY (followed_user_id) REFERENCES user(user_id) ON DELETE CASCADE
 );
