@@ -1,51 +1,3 @@
-// package controllers
-
-// import (
-// 	"net/http"
-// 	"myproject/usecase"
-// 	"encoding/json"
-// )
-
-// type RegisterUserController struct {
-// 	RegisterUserUseCase *usecase.RegisterUserUseCase
-// }
-
-// // NewRegisterUserControllerはRegisterUserControllerのインスタンスを返します。
-// func NewRegisterUserController(registerUserUseCase *usecase.RegisterUserUseCase) *RegisterUserController {
-// 	return &RegisterUserController{RegisterUserUseCase: registerUserUseCase}
-// }
-
-// // ユーザー登録
-// func (c *RegisterUserController) CreateUser(w http.ResponseWriter, r *http.Request) {
-// 	var userRegister usecase.UserRegister
-// 	if err := json.NewDecoder(r.Body).Decode(&userRegister); err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	if err := c.RegisterUserUseCase.RegisterUser(userRegister); err != nil {
-// 		http.Error(w, "Error registering user", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.WriteHeader(http.StatusCreated)
-// }
-
-// // プロフィール取得
-// func (c *RegisterUserController) GetUser(w http.ResponseWriter, r *http.Request) {
-// 	var userRegister usecase.UserRegister
-// 	if err := json.NewDecoder(r.Body).Decode(&userRegister); err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	if err := c.RegisterUserUseCase.RegisterUser(userRegister); err != nil {
-// 		http.Error(w, "Error registering user", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.WriteHeader(http.StatusCreated)
-// }
 package controllers
 
 import (
@@ -61,6 +13,8 @@ type UserController struct {
 	GetProfileUserUseCase *usecase.GetProfileUserUseCase
 	GetFollowingUserUseCase *usecase.GetFollowingUserUseCase
 	GetFollowersUserUseCase *usecase.GetFollowersUserUseCase
+	FollowUserUseCase *usecase.FollowUserUseCase
+	UnFollowUserUseCase *usecase.UnFollowUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -71,6 +25,8 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	getProfileUserUseCase := usecase.NewGetProfileUserUseCase(db)
 	getFollowingUserUseCase := usecase.NewGetFollowingUserUseCase(db)
 	getFollowersUserUseCase := usecase.NewGetFollowersUserUseCase(db)
+	followUserUseCase := usecase.NewFollowUserUseCase(db)
+	unfollowUserUseCase := usecase.NewUnFollowUserUseCase(db)
 
 	// UserControllerを作成して返す
 	return &UserController{
@@ -78,6 +34,8 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		GetProfileUserUseCase: getProfileUserUseCase,
 		GetFollowingUserUseCase: getFollowingUserUseCase,
 		GetFollowersUserUseCase: getFollowersUserUseCase,
+		FollowUserUseCase: followUserUseCase,
+		UnFollowUserUseCase: unfollowUserUseCase,
 	}
 }
 
@@ -146,4 +104,36 @@ func (c *UserController) GetFollowers(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+//フォロー
+func (c* UserController) Follow(w http.ResponseWriter, r *http.Request){
+	var followRegister usecase.FollowRegister
+	if err := json.NewDecoder(r.Body).Decode(&followRegister); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.FollowUserUseCase.Follow(followRegister); err != nil{
+		http.Error(w, "Error registering follow", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+//フォロー
+func (c* UserController) UnFollow(w http.ResponseWriter, r *http.Request){
+	var unFollowRegister usecase.UnFollowRegister
+	if err := json.NewDecoder(r.Body).Decode(&unFollowRegister); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.UnFollowUserUseCase.UnFollow(unFollowRegister); err != nil{
+		http.Error(w, "Error registering unfollow", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
