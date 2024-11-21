@@ -4,14 +4,27 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func RootingRegister(userController *UserController)*mux.Router{
-	r := mux.NewRouter()
 
-	r.HandleFunc("/user/create",userController.CreateUser).Methods("POST")
-	r.HandleFunc("/user/{userId}",userController.GetUserProfile).Methods("Get")
-	r.HandleFunc("/user/{userId}/followers",userController.GetFollowers).Methods("Get")
-	r.HandleFunc("/user/{userId}/following",userController.GetFollowing).Methods("Get")
-	r.HandleFunc("/user/follow",userController.Follow).Methods("Post")
-	r.HandleFunc("/user/unfollow",userController.UnFollow).Methods("Post")
-	return r
+func (uc *UserController) RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/user/register",uc.CreateUser).Methods("POST")
+	r.HandleFunc("/user/{userId}",uc.GetUserProfile).Methods("Get")
+	r.HandleFunc("/user/{userId}/followers",uc.GetFollowers).Methods("Get")
+	r.HandleFunc("/user/{userId}/following",uc.GetFollowing).Methods("Get")
+	r.HandleFunc("/user/follow",uc.Follow).Methods("Post")
+	r.HandleFunc("/user/unfollow",uc.UnFollow).Methods("Post")
+	r.HandleFunc("/user/{userId}/update",uc.UpdateProfile).Methods("PUT")
+	r.HandleFunc("/user/{userId}/posts",uc.GetUserPosts).Methods("Get")
+}
+
+func (pc *PostController) RegisterRoutes(r *mux.Router){
+	r.HandleFunc("/post/create",pc.CreatePost).Methods("Post")
+	r.HandleFunc("/post/{postId}",pc.GetPost).Methods("Get")
+	r.HandleFunc("/post/update",pc.UpdatePost).Methods("Put")
+	r.HandleFunc("/post/{postId}",pc.DeletePost).Methods("Delete")
+	r.HandleFunc("/post/{postId}/reply",pc.ReplyPost).Methods("POST")
+	r.HandleFunc("/post/{postId}/like",pc.LikePost).Methods("Post")
+	r.HandleFunc("/post/{postId}/unlike",pc.UnLikePost).Methods("Post")
+	r.HandleFunc("/post/{postId}/likes",pc.GetLikes).Methods("Get")
+
+	r.HandleFunc("/timeline/{userId}",pc.Timeline).Methods("Get")
 }

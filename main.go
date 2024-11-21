@@ -3,6 +3,7 @@ package main
 import(
 	"net/http"
 	"myproject/controllers" 
+	"github.com/gorilla/mux"
 	"myproject/dao"
 	"log"
 	"syscall"
@@ -21,11 +22,15 @@ func main(){
 	closeDBWithSysCall(db)
 
 	tweetDao := dao.NewTweetDAO(db)
+	postDAO := dao.NewPostDAO(db)
 	// コントローラーのインスタンスを作成
 	userController:= controllers.NewUserController(tweetDao)
+	postController := controllers.NewPostController(postDAO)
 
 	// ルート設定
-	r := controllers.RootingRegister(userController)
+	r := mux.NewRouter()
+	userController.RegisterRoutes(r)
+	postController.RegisterRoutes(r)
 
 	log.Println("Listening...")
 	if err := http.ListenAndServe(":8000", r); err != nil {
