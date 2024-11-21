@@ -7,7 +7,6 @@ import(
 	"myproject/model"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
-	"os"
 )
 
 
@@ -22,40 +21,10 @@ type TweetDAOInterface interface{
 	GetFollowers(userId string)([]model.Profile,error)
 	Follow(follow model.Follow) error
 	UnFollow(unfollow model.UnFollow) error
+	UpdateProfile(user model.Profile) error
+	GetUserPosts(userId string) ([]model.Post,error)
 }
 
-//DBへの接続を初期化
-func NewDBConnection()(*sql.DB,error) {
-	mysqlUser := os.Getenv("MYSQL_USER")
-	mysqlPwd := os.Getenv("MYSQL_PWD")
-	mysqlHost := os.Getenv("MYSQL_HOST")
-	mysqlDatabase := os.Getenv("MYSQL_DATABASE")
-	connStr := fmt.Sprintf("%s:%s@%s/%s", mysqlUser, mysqlPwd, mysqlHost, mysqlDatabase)
-	db, err := sql.Open("mysql", connStr)
-	if err != nil {
-		log.Fatalf("fail: sql.Open, %v\n", err)
-		return nil,err
-	}
-	if err := db.Ping(); err != nil {
-		log.Fatalf("fail: _db.Ping, %v\n", err)
-		return nil,err
-	}
-	return db,nil
-
-	// ////localとつなげるとき
-	// mysqlUser := "user"
-	// mysqlUserPwd := "password"
-	// mysqlDatabase := "mydatabase"
-	// db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3306)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
-	// if err != nil {
-	// 	log.Fatalf("fail: sql.Open, %v\n", err)
-	// }
-	// if err := db.Ping(); err != nil {
-	// 	log.Fatalf("fail: _db.Ping, %v\n", err)
-	// }
-	// return db,nil
-
-}
 
 //TweetDAOのインスタンスを返す
 func NewTweetDAO (db *sql.DB) *TweetDAO{
@@ -64,14 +33,14 @@ func NewTweetDAO (db *sql.DB) *TweetDAO{
 
 
 func (dao *TweetDAO) RegisterUser(user model.Profile) error{
-	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,firebase_uid,profile_img_url) VALUES (?, ?, ?, ?,?)", user.Id, user.Name, user.Bio,user.FireBaseId,"")
+	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,profile_img_url) VALUES (?, ?, ?,?)", user.Id, user.Name, user.Bio,user.ImgUrl)
 	return err
 }
 
 //user_idをもとにユーザープロフィールを得る
 func (dao *TweetDAO) GetUserProfile(userId string) (model.Profile, error) {
 	var prof model.Profile
-	err := dao.DB.QueryRow("SELECT user_id, name, bio FROM user WHERE user_id = ?", userId).Scan(&prof.Id, &prof.Name, &prof.Bio)
+	err := dao.DB.QueryRow("SELECT user_id, name, bio, profile_img_url FROM user WHERE user_id = ?", userId).Scan(&prof.Id, &prof.Name, &prof.Bio,&prof.ImgUrl)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// ユーザーが見つからなかった場合
@@ -181,4 +150,99 @@ func (dao *TweetDAO) UnFollow(unfollow model.UnFollow) error {
 	}
 
 	return nil
+}
+
+func (dao *TweetDAO) UpdateProfile(user model.Profile) error {
+	_, err := dao.DB.Exec(`
+		UPDATE user
+		SET name = ?, bio = ?, profile_img_url = ?
+		WHERE user_id = ?`,
+		user.Name, user.Bio, user.ImgUrl, user.Id)
+	return err
+}
+
+func (dao *TweetDAO) GetUserPosts(userId string) ([]model.Post,error){
+	// 1. フォローしているユーザーの投稿を取得
+	query := `
+		SELECT post_id, user_id, content, img_url, created_at, edited_at, deleted_at, parent_post_id
+		FROM post 
+		WHERE user_id = ?
+		`
+	
+	// クエリ実行
+	rows, err := dao.DB.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// 結果を格納するスライス
+	var posts []model.Post
+	for rows.Next() {
+		var post model.Post
+		var createdAtRaw []byte
+		var editedAtRaw []byte
+		var deletedAtRaw []byte
+		err := rows.Scan(
+			&post.PostId,
+			&post.UserId,
+			&post.Content,
+			&post.ImgUrl,
+			&createdAtRaw,  // created_atを[]byteで受け取る
+			&editedAtRaw,   // edited_atを[]byteで受け取る
+			&deletedAtRaw,  // deleted_atを[]byteで受け取る
+			&post.ParentPostId,
+		)
+
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// ユーザーが見つからなかった場合
+				return nil, err  // 空の構造体を返す
+			}
+			// その他のエラー
+			log.Printf("Error fetching timeline: %v", err)
+			return nil, err
+		}
+
+		// createdAtRaw を time.Time に変換
+		if len(createdAtRaw) > 0 {
+			createdAtStr := string(createdAtRaw)
+			post.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
+			if err != nil {
+				log.Printf("Error parsing created_at: %v", err)
+				return nil, err
+			}
+		} else {
+			log.Printf("created_at is NULL")
+			return nil,err
+		}
+
+		// editedAtRaw を sql.NullTime に変換
+		if len(editedAtRaw) > 0 {
+			editedAtStr := string(editedAtRaw)
+			editedAt, err := time.Parse("2006-01-02 15:04:05", editedAtStr)
+			if err != nil {
+				log.Printf("Error parsing edited_at: %v", err)
+				return nil,err
+			}
+			post.EditedAt = sql.NullTime{Time: editedAt, Valid: true}
+		} else {
+			post.EditedAt = sql.NullTime{Valid: false}  // NULL 値
+		}
+
+		// deletedAtRaw を sql.NullTime に変換
+		if len(deletedAtRaw) > 0 {
+			deletedAtStr := string(deletedAtRaw)
+			deletedAt, err := time.Parse("2006-01-02 15:04:05", deletedAtStr)
+			if err != nil {
+				log.Printf("Error parsing deleted_at: %v", err)
+				return nil,err
+			}
+			post.DeletedAt = sql.NullTime{Time: deletedAt, Valid: true}
+		} else {
+			post.DeletedAt = sql.NullTime{Valid: false}  // NULL 値
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }

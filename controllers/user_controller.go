@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"myproject/usecase"
 	"myproject/dao"
+	"myproject/model"
 	"encoding/json"
 	"github.com/gorilla/mux"
 )
@@ -15,6 +16,8 @@ type UserController struct {
 	GetFollowersUserUseCase *usecase.GetFollowersUserUseCase
 	FollowUserUseCase *usecase.FollowUserUseCase
 	UnFollowUserUseCase *usecase.UnFollowUserUseCase
+	UpdateProfileUserUseCase *usecase.UpdateProfileUserUseCase
+	GetUserPostsUserUseCase *usecase.GetUserPostsUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -27,6 +30,9 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	getFollowersUserUseCase := usecase.NewGetFollowersUserUseCase(db)
 	followUserUseCase := usecase.NewFollowUserUseCase(db)
 	unfollowUserUseCase := usecase.NewUnFollowUserUseCase(db)
+	updateProfileUserUSeCase := usecase.NewUpdateProfileUserUseCase(db)
+	getUserPostsUserUseCase := usecase.NewGetUserPostsUserUseCase(db)
+
 
 	// UserControllerを作成して返す
 	return &UserController{
@@ -36,12 +42,14 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		GetFollowersUserUseCase: getFollowersUserUseCase,
 		FollowUserUseCase: followUserUseCase,
 		UnFollowUserUseCase: unfollowUserUseCase,
+		UpdateProfileUserUseCase: updateProfileUserUSeCase,
+		GetUserPostsUserUseCase: getUserPostsUserUseCase,
 	}
 }
 
 // ユーザー登録
 func (c *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var userRegister usecase.UserRegister
+	var userRegister model.Profile
 	if err := json.NewDecoder(r.Body).Decode(&userRegister); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -122,7 +130,7 @@ func (c* UserController) Follow(w http.ResponseWriter, r *http.Request){
 	w.WriteHeader(http.StatusCreated)
 }
 
-//フォロー
+//フォロー外す
 func (c* UserController) UnFollow(w http.ResponseWriter, r *http.Request){
 	var unFollowRegister usecase.UnFollowRegister
 	if err := json.NewDecoder(r.Body).Decode(&unFollowRegister); err != nil {
@@ -136,4 +144,36 @@ func (c* UserController) UnFollow(w http.ResponseWriter, r *http.Request){
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+// ユーザープロフィール更新
+func (c *UserController) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	var ur model.Profile
+	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.UpdateProfileUserUseCase.UpdateProfile(ur); err != nil {
+		http.Error(w, "Error registering user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (c *UserController) GetUserPosts(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	posts, err := c.GetUserPostsUserUseCase.GetUserPosts(userId)
+	if err != nil {
+		http.Error(w,"Error fetching user posts",http.StatusInternalServerError)
+		return 
+	}
+
+	if err := json.NewEncoder(w).Encode(posts); err != nil {
+		http.Error(w,"Error encoding user posts",http.StatusInternalServerError)
+		return 
+	}
 }
