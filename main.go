@@ -3,6 +3,7 @@ package main
 import(
 	"net/http"
 	"myproject/controllers" 
+	"myproject/middleware"
 	"github.com/gorilla/mux"
 	"myproject/dao"
 	"log"
@@ -29,6 +30,7 @@ func main(){
 
 	// ルート設定
 	r := mux.NewRouter()
+	r.Use(middleware.CORSMiddleware)
 	userController.RegisterRoutes(r)
 	postController.RegisterRoutes(r)
 
