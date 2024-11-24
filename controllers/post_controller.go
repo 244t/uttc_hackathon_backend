@@ -191,3 +191,12 @@ func (c *PostController) Timeline(w http.ResponseWriter, r* http.Request){
 		return 
 	}
 }
+
+// OPTIONSリクエストに対する処理
+func (pc *PostController) CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
+    // 必要なCORSヘッダーを設定
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    w.WriteHeader(http.StatusOK) // 200 OKを返す
+}
