@@ -157,7 +157,7 @@ func (dao *TweetDAO) UpdateProfile(user model.Profile) error {
 		UPDATE user
 		SET name = ?, bio = ?, profile_img_url = ?, header_img_url = ?, location = ?
 		WHERE user_id = ?`,
-		user.Name, user.Bio, user.ImgUrl, user.Id,user.HeaderUrl,user.Location)
+		user.Name, user.Bio, user.ImgUrl,user.HeaderUrl,user.Location,user.Id)
 	return err
 }
 
