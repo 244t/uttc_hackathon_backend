@@ -182,7 +182,7 @@ func (c *UserController) GetUserPosts(w http.ResponseWriter, r *http.Request){
 func (uc *UserController) CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
     // 必要なCORSヘッダーを設定
     w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Methods", "PUT,POST, OPTIONS")
     w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
     w.WriteHeader(http.StatusOK) // 200 OKを返す
 }

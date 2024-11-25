@@ -47,3 +47,14 @@ type Likes struct {
 	Likes []string `json:"user_ids"`
 }
 
+type PostWithReplyCounts struct {
+	PostId       string       `json:"post_id"`
+	UserId       string       `json:"user_id"`
+	Content      string       `json:"content"`
+	ImgUrl		string `json:"img_url"`
+	CreatedAt    time.Time    `json:"created_at"`   // 必須カラム、time.Time型
+	EditedAt     sql.NullTime `json:"edited_at"`    // NULL可能カラム、sql.NullTime型
+	DeletedAt    sql.NullTime `json:"deleted_at"`   // NULL可能カラム、sql.NullTime型
+	ParentPostId  sql.NullString     `json:"parent_post_id"`
+	ReplyCounts int           `json:"reply_counts"` // 子ポスト数
+}

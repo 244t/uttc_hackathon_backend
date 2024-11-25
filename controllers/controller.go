@@ -41,6 +41,7 @@ func (pc *PostController) RegisterRoutes(r *mux.Router){
 
 	r.HandleFunc("/post/{postId}",pc.DeletePost).Methods("Delete")
 
+	r.HandleFunc("/post/{postId}/reply",pc.GetReplyPost).Methods("GET")
 	r.HandleFunc("/post/{postId}/reply",pc.ReplyPost).Methods("POST")
 	r.HandleFunc("/post/{postId}/reply",pc.CORSOptionsHandler).Methods("OPTIONS")
 
