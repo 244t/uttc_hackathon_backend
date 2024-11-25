@@ -44,6 +44,6 @@ type Like struct {
 }
 
 type Likes struct {
-	Likes int `json:"likes"`
+	Likes []string `json:"user_ids"`
 }
 
