@@ -58,7 +58,7 @@ func (dao *TweetDAO) GetUserProfile(userId string) (model.Profile, error) {
 func (dao *TweetDAO) GetFollowing(userId string) ([]model.Profile, error) {
 	// INNER JOINを使用して、follower テーブルと user テーブルを結合
 	query := `
-		SELECT u.user_id, u.name, u.bio, u.profile_img_url
+		SELECT u.user_id, u.name, u.bio, u.profile_img_url, u.header_img_url, location
 		FROM follower f
 		INNER JOIN user u ON f.following_user_id = u.user_id
 		WHERE f.user_id = ?
@@ -93,7 +93,7 @@ func (dao *TweetDAO) GetFollowing(userId string) ([]model.Profile, error) {
 func (dao *TweetDAO) GetFollowers(userId string) ([]model.Profile, error) {
 	// フォローしているユーザーのプロフィールを取得するためのSQLクエリ
 	query := `
-		SELECT u.user_id, u.name, u.bio, u.profile_img_url
+		SELECT u.user_id, u.name, u.bio, u.profile_img_url, u.header_img_url, u.location
 		FROM user u
 		INNER JOIN follower f ON u.user_id = f.user_id
 		WHERE f.following_user_id = ?
@@ -157,7 +157,7 @@ func (dao *TweetDAO) UpdateProfile(user model.Profile) error {
 		UPDATE user
 		SET name = ?, bio = ?, profile_img_url = ?, header_img_url = ?, location = ?
 		WHERE user_id = ?`,
-		user.Name, user.Bio, user.ImgUrl, user.Id)
+		user.Name, user.Bio, user.ImgUrl, user.Id,user.HeaderUrl,user.Location)
 	return err
 }
 
