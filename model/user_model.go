@@ -5,6 +5,8 @@ type Profile struct{
 	Name string `json:"name"`
 	Bio string `json:"bio"`
 	ImgUrl string `json:"img_url"`
+	HeaderUrl string `json:"header_url"`
+	Location string `json:"location"`
 }
 
 type Follow struct{

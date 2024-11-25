@@ -33,14 +33,14 @@ func NewTweetDAO (db *sql.DB) *TweetDAO{
 
 
 func (dao *TweetDAO) RegisterUser(user model.Profile) error{
-	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,profile_img_url) VALUES (?, ?, ?,?)", user.Id, user.Name, user.Bio,user.ImgUrl)
+	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,profile_img_url,header_img_url,location) VALUES (?, ?, ?,?,?,?)", user.Id, user.Name, user.Bio,user.ImgUrl,user.HeaderUrl,user.Location)
 	return err
 }
 
 //user_idをもとにユーザープロフィールを得る
 func (dao *TweetDAO) GetUserProfile(userId string) (model.Profile, error) {
 	var prof model.Profile
-	err := dao.DB.QueryRow("SELECT user_id, name, bio, profile_img_url FROM user WHERE user_id = ?", userId).Scan(&prof.Id, &prof.Name, &prof.Bio,&prof.ImgUrl)
+	err := dao.DB.QueryRow("SELECT user_id, name, bio, profile_img_url,header_img_url,location FROM user WHERE user_id = ?", userId).Scan(&prof.Id, &prof.Name, &prof.Bio,&prof.ImgUrl,&prof.HeaderUrl,&prof.Location)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// ユーザーが見つからなかった場合
@@ -78,7 +78,7 @@ func (dao *TweetDAO) GetFollowing(userId string) ([]model.Profile, error) {
 	// rowsからプロフィール情報を読み取って、profilesスライスに追加
 	for rows.Next() {
 		var profile model.Profile
-		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio,&profile.ImgUrl); err != nil {
+		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio,&profile.ImgUrl,&profile.HeaderUrl,&profile.Location); err != nil {
 			log.Printf("Error scanning profile: %v", err)
 			return nil, fmt.Errorf("could not scan profile: %w", err)
 		}
@@ -113,7 +113,7 @@ func (dao *TweetDAO) GetFollowers(userId string) ([]model.Profile, error) {
 	// 取得した各行を処理
 	for rows.Next() {
 		var profile model.Profile
-		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio,&profile.ImgUrl); err != nil {
+		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio,&profile.ImgUrl,&profile.HeaderUrl,&profile.Location); err != nil {
 			log.Printf("Error scanning profile for userId %s: %v", userId, err)
 			continue
 		}
@@ -155,7 +155,7 @@ func (dao *TweetDAO) UnFollow(unfollow model.UnFollow) error {
 func (dao *TweetDAO) UpdateProfile(user model.Profile) error {
 	_, err := dao.DB.Exec(`
 		UPDATE user
-		SET name = ?, bio = ?, profile_img_url = ?
+		SET name = ?, bio = ?, profile_img_url = ?, header_img_url = ?, location = ?
 		WHERE user_id = ?`,
 		user.Name, user.Bio, user.ImgUrl, user.Id)
 	return err
