@@ -159,21 +159,49 @@ func (c *PostController) UnLikePost (w http.ResponseWriter, r* http.Request){
 	w.WriteHeader(http.StatusCreated)
 }
 
-//指定したpostIdのいいね数を取得
-func (c *PostController) GetLikes(w http.ResponseWriter, r* http.Request){
-	vars := mux.Vars(r)
-	postId := vars["postId"]
-	likes, err := c.GetLikesPostUseCase.GetLikesPost(postId)
-	if err != nil {
-		http.Error(w, "Error fetching likes", http.StatusInternalServerError)
-		return
-	}
+// //指定したpostIdのいいね数を取得
+// func (c *PostController) GetLikes(w http.ResponseWriter, r* http.Request){
+// 	vars := mux.Vars(r)
+// 	postId := vars["postId"]
+// 	likes, err := c.GetLikesPostUseCase.GetLikesPost(postId)
+// 	if err != nil {
+// 		http.Error(w, "Error fetching likes", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	if err := json.NewEncoder(w).Encode(likes); err != nil {
-		http.Error(w, "Error encoding likes", http.StatusInternalServerError)
-		return
-	}
+// 	if err := json.NewEncoder(w).Encode(likes); err != nil {
+// 		http.Error(w, "Error encoding likes", http.StatusInternalServerError)
+// 		return
+// 	}
+// }
+// LikesResponse は、いいねの数とユーザーIDのリストを含むレスポンスの構造体
+
+func (c *PostController) GetLikes(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    postId := vars["postId"]
+
+    // 'GetLikesPostUseCase' を使っていいねのユーザーIDリストを取得
+    userIds, err := c.GetLikesPostUseCase.GetLikesPost(postId)
+    if err != nil {
+        // エラーハンドリング
+        http.Error(w, "Error fetching likes", http.StatusInternalServerError)
+        return
+    }
+
+    // レスポンス用の構造体を作成
+    response := usecase.LikesResponse{
+        LikeCount: len(userIds),  // いいねの数
+        UserIds:   userIds,       // ユーザーIDのリスト
+    }
+
+    // 正常にデータが取得できた場合は、response を JSON でエンコードして返す
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        http.Error(w, "Error encoding likes", http.StatusInternalServerError)
+        return
+    }
 }
+
 
 //フォローしているユーザーの投稿を取得
 func (c *PostController) Timeline(w http.ResponseWriter, r* http.Request){

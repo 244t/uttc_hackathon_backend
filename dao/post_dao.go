@@ -20,7 +20,7 @@ type PostDAOInterface interface{
 	DeletePost(deletePost model.Delete) error
 	LikePost(l model.Like) error
 	UnLikePost(u model.Like) error
-	GetLikesPost(postId string) (model.Likes,error)
+	GetLikesPost(postId string) ([]string,error)
 	Timeline(userId string) ([]model.Post,error)
 }
 
@@ -142,16 +142,51 @@ func (dao *PostDAO) UnLikePost(u model.Like) error{
     return err 
 }
 
-func (dao *PostDAO) GetLikesPost (postId string) (model.Likes,error) {
-	var l model.Likes
-	query := "SELECT COUNT(*) FROM `like` WHERE post_id = ?"
-	err := dao.DB.QueryRow(query, postId).Scan(&l.Likes)
-	if err != nil {
-		fmt.Errorf("error executing query: %w", err)
-        return model.Likes{}, err
+// func (dao *PostDAO) GetLikesPost (postId string) (model.Likes,error) {
+// 	var l model.Likes
+// 	query := "SELECT COUNT(*) FROM `like` WHERE post_id = ?"
+// 	err := dao.DB.QueryRow(query, postId).Scan(&l.Likes)
+// 	if err != nil {
+// 		fmt.Errorf("error executing query: %w", err)
+//         return model.Likes{}, err
+//     }
+// 	return l,nil
+// }
+func (dao *PostDAO) GetLikesPost(postId string) ([]string, error) {
+    // user_idを格納するスライス
+    var userIds []string
+    
+    // `user_id` を取得するクエリ
+    query := "SELECT user_id FROM `like` WHERE post_id = ?"
+    
+    // クエリを実行し、取得したuser_idをスライスに追加
+    rows, err := dao.DB.Query(query, postId)
+    if err != nil {
+        fmt.Errorf("error executing query: %w", err)
+        return nil, err
     }
-	return l,nil
+    defer rows.Close()
+    
+    // 取得したuser_idをスライスに格納
+    for rows.Next() {
+        var userId string
+        if err := rows.Scan(&userId); err != nil {
+            fmt.Errorf("error scanning row: %w", err)
+            return nil, err
+        }
+        userIds = append(userIds, userId)
+    }
+    
+    // rowsの走査中にエラーが発生していないか確認
+    if err := rows.Err(); err != nil {
+        fmt.Errorf("error during row iteration: %w", err)
+        return nil, err
+    }
+
+    // userIdsスライスを返す
+    return userIds, nil
 }
+
 
 func (dao *PostDAO) Timeline(userId string) ([]model.Post, error) {
     // 1. フォローしているユーザーの投稿を取得
