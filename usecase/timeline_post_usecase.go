@@ -13,6 +13,6 @@ func NewTimelineUseCase(pd dao.PostDAOInterface) *TimelineUseCase{
 	return &TimelineUseCase{PostDAO: pd}
 }
 
-func (gp *TimelineUseCase) Timeline(userId string)([]model.Post,error){
+func (gp *TimelineUseCase) Timeline(userId string)([]model.PostWithReplyCounts,error){
 	return gp.PostDAO.Timeline(userId)
 }

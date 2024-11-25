@@ -13,6 +13,7 @@ type PostController struct{
 	GetPostUseCase *usecase.GetPostUseCase
 	UpdatePostUseCase *usecase.UpdatePostUseCase
 	DeletePostUseCase *usecase.DeletePostUseCase
+	GetReplyPostUseCase *usecase.GetReplyPostUseCase
 	ReplyPostUseCase *usecase.ReplyPostUseCase
 	LikePostUseCase *usecase.LikePostUseCase
 	UnLikePostUseCase *usecase.UnLikePostUseCase
@@ -25,6 +26,7 @@ func NewPostController(db dao.PostDAOInterface) *PostController{
 	getPostUseCase := usecase.NewGetPostUseCase(db)
 	updatePostUseCase := usecase.NewUpdatePostUSeCase(db)
 	deletePostUseCase := usecase.NewDeletePostUseCase(db)
+	getreplyPostUseCase := usecase.NewGetReplyPostUseCase(db)
 	replyPostUseCase := usecase.NewReplyPostUseCase(db)
 	likePostUseCase := usecase.NewLikePostUseCase(db)
 	unlikePostUseCase := usecase.NewUnLikePostUseCase(db)
@@ -36,6 +38,7 @@ func NewPostController(db dao.PostDAOInterface) *PostController{
 		GetPostUseCase: getPostUseCase,
 		UpdatePostUseCase: updatePostUseCase,
 		DeletePostUseCase: deletePostUseCase,
+		GetReplyPostUseCase : getreplyPostUseCase,
 		ReplyPostUseCase: replyPostUseCase,
 		LikePostUseCase : likePostUseCase,
 		UnLikePostUseCase : unlikePostUseCase,
@@ -105,6 +108,22 @@ func (c *PostController) DeletePost(w http.ResponseWriter, r* http.Request){
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (c *PostController) GetReplyPost(w http.ResponseWriter, r* http.Request){
+	vars := mux.Vars(r)
+	postId := vars["postId"]
+	posts, err := c.GetReplyPostUseCase.GetReplyPost(postId)
+	if err != nil {
+		http.Error(w,"Error fetching reply",http.StatusInternalServerError)
+		return 
+	}
+
+	if err := json.NewEncoder(w).Encode(posts); err != nil {
+		http.Error(w,"Error encoding reply",http.StatusInternalServerError)
+		return 
+	}
+
+}
+
 //返信を作成
 func (c *PostController) ReplyPost(w http.ResponseWriter, r* http.Request){
 	var postRegister usecase.PostRegister
@@ -159,23 +178,6 @@ func (c *PostController) UnLikePost (w http.ResponseWriter, r* http.Request){
 	w.WriteHeader(http.StatusCreated)
 }
 
-// //指定したpostIdのいいね数を取得
-// func (c *PostController) GetLikes(w http.ResponseWriter, r* http.Request){
-// 	vars := mux.Vars(r)
-// 	postId := vars["postId"]
-// 	likes, err := c.GetLikesPostUseCase.GetLikesPost(postId)
-// 	if err != nil {
-// 		http.Error(w, "Error fetching likes", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	if err := json.NewEncoder(w).Encode(likes); err != nil {
-// 		http.Error(w, "Error encoding likes", http.StatusInternalServerError)
-// 		return
-// 	}
-// }
-// LikesResponse は、いいねの数とユーザーIDのリストを含むレスポンスの構造体
-
 func (c *PostController) GetLikes(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     postId := vars["postId"]
@@ -224,7 +226,7 @@ func (c *PostController) Timeline(w http.ResponseWriter, r* http.Request){
 func (pc *PostController) CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
     // 必要なCORSヘッダーを設定
     w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Methods", "PUT,POST, OPTIONS")
     w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
     w.WriteHeader(http.StatusOK) // 200 OKを返す
 }
