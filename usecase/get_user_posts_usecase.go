@@ -17,6 +17,6 @@ func NewGetUserPostsUserUseCase(tweetDao dao.TweetDAOInterface) *GetUserPostsUse
 }
 
 
-func (gp *GetUserPostsUserUseCase) GetUserPosts(userId string)([]model.Post,error){
+func (gp *GetUserPostsUserUseCase) GetUserPosts(userId string)([]model.PostWithReplyCounts,error){
 	return gp.TweetDAO.GetUserPosts(userId)
 }
