@@ -15,6 +15,7 @@ type TweetDAO struct {
 }
 
 type TweetDAOInterface interface{
+	GetChildPostCount(postId string) (int,error)
 	RegisterUser(user model.Profile) error
 	GetUserProfile(userId string) (model.Profile,error)
 	GetFollowing(userId string) ([]model.Profile,error)
@@ -22,13 +23,30 @@ type TweetDAOInterface interface{
 	Follow(follow model.Follow) error
 	UnFollow(unfollow model.UnFollow) error
 	UpdateProfile(user model.Profile) error
-	GetUserPosts(userId string) ([]model.Post,error)
+	GetUserPosts(userId string) ([]model.PostWithReplyCounts,error)
 }
 
 
 //TweetDAOのインスタンスを返す
 func NewTweetDAO (db *sql.DB) *TweetDAO{
 	return &TweetDAO{DB:db}
+}
+
+func (dao *TweetDAO) GetChildPostCount(postId string) (int, error) {
+	// 子ポストの数を取得するクエリ
+	query := `
+	SELECT COUNT(*) 
+	FROM post 
+	WHERE parent_post_id = ?
+	`
+
+	var count int
+	err := dao.DB.QueryRow(query, postId).Scan(&count)
+	if err != nil {
+		log.Printf("Error counting child posts for postId %s: %v", postId, err)
+		return 0, fmt.Errorf("could not count child posts: %w", err)
+	}
+	return count, nil
 }
 
 
@@ -161,7 +179,7 @@ func (dao *TweetDAO) UpdateProfile(user model.Profile) error {
 	return err
 }
 
-func (dao *TweetDAO) GetUserPosts(userId string) ([]model.Post,error){
+func (dao *TweetDAO) GetUserPosts(userId string) ([]model.PostWithReplyCounts,error){
 	// 1. フォローしているユーザーの投稿を取得
 	query := `
 		SELECT post_id, user_id, content, img_url, created_at, edited_at, deleted_at, parent_post_id
@@ -176,9 +194,9 @@ func (dao *TweetDAO) GetUserPosts(userId string) ([]model.Post,error){
 	}
 	defer rows.Close()
 	// 結果を格納するスライス
-	var posts []model.Post
+	var posts []model.PostWithReplyCounts
 	for rows.Next() {
-		var post model.Post
+		var post model.PostWithReplyCounts
 		var createdAtRaw []byte
 		var editedAtRaw []byte
 		var deletedAtRaw []byte
@@ -241,6 +259,17 @@ func (dao *TweetDAO) GetUserPosts(userId string) ([]model.Post,error){
 		} else {
 			post.DeletedAt = sql.NullTime{Valid: false}  // NULL 値
 		}
+
+		// 2. 子ポスト数を取得
+		childPostCount, err := dao.GetChildPostCount(post.PostId)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch child post count: %w", err)
+		}
+
+		// 子ポスト数をポスト構造体に設定
+		post.ReplyCounts = childPostCount
+
+
 		posts = append(posts, post)
 	}
 
