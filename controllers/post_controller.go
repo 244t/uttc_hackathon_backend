@@ -6,7 +6,6 @@ import (
 	"myproject/dao"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"strconv"
 )
 
 type PostController struct{
