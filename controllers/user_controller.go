@@ -18,6 +18,7 @@ type UserController struct {
 	UnFollowUserUseCase *usecase.UnFollowUserUseCase
 	UpdateProfileUserUseCase *usecase.UpdateProfileUserUseCase
 	GetUserPostsUserUseCase *usecase.GetUserPostsUserUseCase
+	SearchUserUseCase *usecase.SearchUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -32,6 +33,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	unfollowUserUseCase := usecase.NewUnFollowUserUseCase(db)
 	updateProfileUserUSeCase := usecase.NewUpdateProfileUserUseCase(db)
 	getUserPostsUserUseCase := usecase.NewGetUserPostsUserUseCase(db)
+	searchUserUseCase := usecase.NewSearchUserUseCase(db)
 
 
 	// UserControllerを作成して返す
@@ -44,6 +46,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		UnFollowUserUseCase: unfollowUserUseCase,
 		UpdateProfileUserUseCase: updateProfileUserUSeCase,
 		GetUserPostsUserUseCase: getUserPostsUserUseCase,
+		SearchUserUseCase : searchUserUseCase,
 	}
 }
 
@@ -176,6 +179,22 @@ func (c *UserController) GetUserPosts(w http.ResponseWriter, r *http.Request){
 		http.Error(w,"Error encoding user posts",http.StatusInternalServerError)
 		return 
 	}
+}
+
+func (c *UserController) SearchUser(w http.ResponseWriter, r *http.Request){
+	var searchWord usecase.Search
+	if err := json.NewDecoder(r.Body).Decode(&searchWord); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	users, err := c.SearchUserUseCase.SearchUser(searchWord)
+	if err != nil {
+		http.Error(w, "Error fetching search profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 // OPTIONSリクエストに対する処理
