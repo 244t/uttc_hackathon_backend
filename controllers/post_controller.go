@@ -6,6 +6,7 @@ import (
 	"myproject/dao"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"strconv"
 )
 
 type PostController struct{
@@ -205,22 +206,72 @@ func (c *PostController) GetLikes(w http.ResponseWriter, r *http.Request) {
 }
 
 
-//フォローしているユーザーの投稿を取得
-func (c *PostController) Timeline(w http.ResponseWriter, r* http.Request){
-	vars := mux.Vars(r)
-	userId := vars["userId"]
+// //フォローしているユーザーの投稿を取得
+// func (c *PostController) Timeline(w http.ResponseWriter, r* http.Request){
+// 	vars := mux.Vars(r)
+// 	userId := vars["userId"]
 
-	posts, err := c.TimelineUseCase.Timeline(userId)
-	if err != nil {
-		http.Error(w,"Error fetching timeline",http.StatusInternalServerError)
-		return 
-	}
+// 	posts, err := c.TimelineUseCase.Timeline(userId)
+// 	if err != nil {
+// 		http.Error(w,"Error fetching timeline",http.StatusInternalServerError)
+// 		return 
+// 	}
 
-	if err := json.NewEncoder(w).Encode(posts); err != nil {
-		http.Error(w,"Error encoding timeline",http.StatusInternalServerError)
-		return 
-	}
+// 	if err := json.NewEncoder(w).Encode(posts); err != nil {
+// 		http.Error(w,"Error encoding timeline",http.StatusInternalServerError)
+// 		return 
+// 	}
+// }
+
+func (c *PostController) Timeline(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    userId := vars["userId"]
+    
+    // クエリパラメータからページングの情報を取得
+    limitStr := r.URL.Query().Get("limit")
+    pageStr := r.URL.Query().Get("page")
+
+    // デフォルト値を設定
+    limit := 7  // 1ページあたりのデータ件数
+    page := 1    // ページ番号
+
+    // クエリパラメータがある場合に設定
+    if limitStr != "" {
+        var err error
+        limit, err = strconv.Atoi(limitStr)
+        if err != nil {
+            http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
+            return
+        }
+    }
+    if pageStr != "" {
+        var err error
+        page, err = strconv.Atoi(pageStr)
+        if err != nil {
+            http.Error(w, "Invalid page parameter", http.StatusBadRequest)
+            return
+        }
+    }
+
+    // TimelineUseCaseにページングパラメータを渡してポストを取得
+    posts, totalCount, err := c.TimelineUseCase.Timeline(userId, limit, page)
+    if err != nil {
+        http.Error(w, "Error fetching timeline", http.StatusInternalServerError)
+        return
+    }
+
+    // 結果をJSONで返す
+    response := map[string]interface{}{
+        "data":       posts,
+        "totalCount": totalCount,
+    }
+
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        http.Error(w, "Error encoding timeline", http.StatusInternalServerError)
+        return
+    }
 }
+
 
 // OPTIONSリクエストに対する処理
 func (pc *PostController) CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
