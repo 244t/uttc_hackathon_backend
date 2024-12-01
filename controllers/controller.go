@@ -27,7 +27,7 @@ func (uc *UserController) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/user/{userId}/posts",uc.GetUserPosts).Methods("Get")
 
 	r.HandleFunc("/user/search",uc.SearchUser).Methods("POST")
-	r.HandleFunc("/user/serach",uc.CORSOptionsHandler).Methods("OPTIONS")
+	r.HandleFunc("/user/search",uc.CORSOptionsHandler).Methods("OPTIONS")
 }
 
 func (pc *PostController) RegisterRoutes(r *mux.Router){
