@@ -24,6 +24,7 @@ type TweetDAOInterface interface{
 	UnFollow(unfollow model.UnFollow) error
 	UpdateProfile(user model.Profile) error
 	GetUserPosts(userId string) ([]model.PostWithReplyCounts,error)
+	SearchUser(searchWord string)([]model.Profile,error)
 }
 
 
@@ -274,4 +275,47 @@ func (dao *TweetDAO) GetUserPosts(userId string) ([]model.PostWithReplyCounts,er
 	}
 
 	return posts, nil
+}
+
+func (dao *TweetDAO) SearchUser(sw string) ([]model.Profile, error) {
+    // 名前がswで始まるユーザーを検索するためのSQLクエリ
+    query := `
+        SELECT user_id, name, bio, profile_img_url, header_img_url, location
+        FROM user
+        WHERE name LIKE ?
+    `
+
+    // swの末尾に%を付けてLIKE検索を準備
+    sw = sw + "%"
+
+    // 結果を格納するスライス
+    var profiles []model.Profile
+
+    // データベースから情報を取得
+    rows, err := dao.DB.Query(query, sw)
+    if err != nil {
+        log.Printf("Error fetching users with name starting with '%s': %v", sw, err)
+        return nil, fmt.Errorf("could not fetch users: %w", err)
+    }
+    defer rows.Close()
+
+    // 取得した各行を処理
+    for rows.Next() {
+        var profile model.Profile
+        if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio, &profile.ImgUrl, &profile.HeaderUrl, &profile.Location); err != nil {
+            log.Printf("Error scanning profile: %v", err)
+            continue
+        }
+        // プロフィールをスライスに追加
+        profiles = append(profiles, profile)
+    }
+
+    // エラーがあれば返す
+    if err := rows.Err(); err != nil {
+        log.Printf("Error iterating over rows: %v", err)
+        return nil, err
+    }
+
+    // 検索結果のユーザーのプロフィールを返す
+    return profiles, nil
 }
