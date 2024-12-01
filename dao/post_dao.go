@@ -23,7 +23,7 @@ type PostDAOInterface interface{
 	LikePost(l model.Like) error
 	UnLikePost(u model.Like) error
 	GetLikesPost(postId string) ([]string,error)
-	Timeline(userId string) ([]model.PostWithReplyCounts,error)
+	Timeline(userId string,limit, page int) ([]model.PostWithReplyCounts,int,error)
 }
 
 func NewPostDAO (db *sql.DB) *PostDAO{
@@ -225,105 +225,211 @@ func (dao *PostDAO) GetLikesPost(postId string) ([]string, error) {
 }
 
 
-func (dao *PostDAO) Timeline(userId string) ([]model.PostWithReplyCounts, error) {
-	// 1. フォローしているユーザーの投稿を取得
-	query := `
+// func (dao *PostDAO) Timeline(userId string) ([]model.PostWithReplyCounts, error) {
+// 	// 1. フォローしているユーザーの投稿を取得
+// 	query := `
+//         SELECT p.post_id, p.user_id, p.content, p.img_url, p.created_at, p.edited_at, p.deleted_at, p.parent_post_id
+//         FROM post p
+//         JOIN follower f ON f.following_user_id = p.user_id
+//         WHERE f.user_id = ?
+//     `
+    
+// 	// クエリ実行
+// 	rows, err := dao.DB.Query(query, userId)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	// 結果を格納するスライス
+// 	var posts []model.PostWithReplyCounts
+// 	for rows.Next() {
+// 		var post model.PostWithReplyCounts
+// 		var createdAtRaw []byte
+// 		var editedAtRaw []byte
+// 		var deletedAtRaw []byte
+// 		err := rows.Scan(
+// 			&post.PostId,
+// 			&post.UserId,
+// 			&post.Content,
+// 			&post.ImgUrl,
+// 			&createdAtRaw,  // created_atを[]byteで受け取る
+// 			&editedAtRaw,   // edited_atを[]byteで受け取る
+// 			&deletedAtRaw,  // deleted_atを[]byteで受け取る
+// 			&post.ParentPostId,
+// 		)
+
+// 		if err != nil {
+// 			if err == sql.ErrNoRows {
+// 				// ユーザーが見つからなかった場合
+// 				return nil, err  // 空の構造体を返す
+// 			}
+// 			// その他のエラー
+// 			log.Printf("Error fetching timeline: %v", err)
+// 			return nil, err
+// 		}
+
+// 		// createdAtRaw を time.Time に変換
+// 		if len(createdAtRaw) > 0 {
+// 			createdAtStr := string(createdAtRaw)
+// 			post.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
+// 			if err != nil {
+// 				log.Printf("Error parsing created_at: %v", err)
+// 				return nil, err
+// 			}
+// 		} else {
+// 			log.Printf("created_at is NULL")
+// 			return nil, err
+// 		}
+
+// 		// editedAtRaw を sql.NullTime に変換
+// 		if len(editedAtRaw) > 0 {
+// 			editedAtStr := string(editedAtRaw)
+// 			editedAt, err := time.Parse("2006-01-02 15:04:05", editedAtStr)
+// 			if err != nil {
+// 				log.Printf("Error parsing edited_at: %v", err)
+// 				return nil, err
+// 			}
+// 			post.EditedAt = sql.NullTime{Time: editedAt, Valid: true}
+// 		} else {
+// 			post.EditedAt = sql.NullTime{Valid: false}  // NULL 値
+// 		}
+
+// 		// deletedAtRaw を sql.NullTime に変換
+// 		if len(deletedAtRaw) > 0 {
+// 			deletedAtStr := string(deletedAtRaw)
+// 			deletedAt, err := time.Parse("2006-01-02 15:04:05", deletedAtStr)
+// 			if err != nil {
+// 				log.Printf("Error parsing deleted_at: %v", err)
+// 				return nil, err
+// 			}
+// 			post.DeletedAt = sql.NullTime{Time: deletedAt, Valid: true}
+// 		} else {
+// 			post.DeletedAt = sql.NullTime{Valid: false}  // NULL 値
+// 		}
+
+// 		// 2. 子ポスト数を取得
+// 		childPostCount, err := dao.GetChildPostCount(post.PostId)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("could not fetch child post count: %w", err)
+// 		}
+
+// 		// 子ポスト数をポスト構造体に設定
+// 		post.ReplyCounts = childPostCount
+
+// 		// 結果を追加
+// 		posts = append(posts, post)
+// 	}
+
+// 	// タイムラインを返す
+// 	return posts, nil
+// }
+func (dao *PostDAO) Timeline(userId string, limit, page int) ([]model.PostWithReplyCounts, int, error) {
+    // offsetを計算
+    offset := (page - 1) * limit
+
+    // 1. フォローしているユーザーの投稿を取得（ページング対応）
+    query := `
         SELECT p.post_id, p.user_id, p.content, p.img_url, p.created_at, p.edited_at, p.deleted_at, p.parent_post_id
         FROM post p
         JOIN follower f ON f.following_user_id = p.user_id
         WHERE f.user_id = ?
+        ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?
     `
     
-	// クエリ実行
-	rows, err := dao.DB.Query(query, userId)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+    // クエリ実行
+    rows, err := dao.DB.Query(query, userId, limit, offset)
+    if err != nil {
+        return nil, 0, err
+    }
+    defer rows.Close()
 
-	// 結果を格納するスライス
-	var posts []model.PostWithReplyCounts
-	for rows.Next() {
-		var post model.PostWithReplyCounts
-		var createdAtRaw []byte
-		var editedAtRaw []byte
-		var deletedAtRaw []byte
-		err := rows.Scan(
-			&post.PostId,
-			&post.UserId,
-			&post.Content,
-			&post.ImgUrl,
-			&createdAtRaw,  // created_atを[]byteで受け取る
-			&editedAtRaw,   // edited_atを[]byteで受け取る
-			&deletedAtRaw,  // deleted_atを[]byteで受け取る
-			&post.ParentPostId,
-		)
+    // 結果を格納するスライス
+    var posts []model.PostWithReplyCounts
+    for rows.Next() {
+        var post model.PostWithReplyCounts
+        var createdAtRaw []byte
+        var editedAtRaw []byte
+        var deletedAtRaw []byte
+        err := rows.Scan(
+            &post.PostId,
+            &post.UserId,
+            &post.Content,
+            &post.ImgUrl,
+            &createdAtRaw,  // created_atを[]byteで受け取る
+            &editedAtRaw,   // edited_atを[]byteで受け取る
+            &deletedAtRaw,  // deleted_atを[]byteで受け取る
+            &post.ParentPostId,
+        )
 
-		if err != nil {
-			if err == sql.ErrNoRows {
-				// ユーザーが見つからなかった場合
-				return nil, err  // 空の構造体を返す
-			}
-			// その他のエラー
-			log.Printf("Error fetching timeline: %v", err)
-			return nil, err
-		}
+        if err != nil {
+            return nil, 0, err
+        }
 
-		// createdAtRaw を time.Time に変換
-		if len(createdAtRaw) > 0 {
-			createdAtStr := string(createdAtRaw)
-			post.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
-			if err != nil {
-				log.Printf("Error parsing created_at: %v", err)
-				return nil, err
-			}
-		} else {
-			log.Printf("created_at is NULL")
-			return nil, err
-		}
+        // createdAtRaw を time.Time に変換
+        if len(createdAtRaw) > 0 {
+            createdAtStr := string(createdAtRaw)
+            post.CreatedAt, err = time.Parse("2006-01-02 15:04:05", createdAtStr)
+            if err != nil {
+                return nil, 0, err
+            }
+        } else {
+            return nil, 0, fmt.Errorf("created_at is NULL")
+        }
 
-		// editedAtRaw を sql.NullTime に変換
-		if len(editedAtRaw) > 0 {
-			editedAtStr := string(editedAtRaw)
-			editedAt, err := time.Parse("2006-01-02 15:04:05", editedAtStr)
-			if err != nil {
-				log.Printf("Error parsing edited_at: %v", err)
-				return nil, err
-			}
-			post.EditedAt = sql.NullTime{Time: editedAt, Valid: true}
-		} else {
-			post.EditedAt = sql.NullTime{Valid: false}  // NULL 値
-		}
+        // editedAtRaw を sql.NullTime に変換
+        if len(editedAtRaw) > 0 {
+            editedAtStr := string(editedAtRaw)
+            editedAt, err := time.Parse("2006-01-02 15:04:05", editedAtStr)
+            if err != nil {
+                return nil, 0, err
+            }
+            post.EditedAt = sql.NullTime{Time: editedAt, Valid: true}
+        } else {
+            post.EditedAt = sql.NullTime{Valid: false}
+        }
 
-		// deletedAtRaw を sql.NullTime に変換
-		if len(deletedAtRaw) > 0 {
-			deletedAtStr := string(deletedAtRaw)
-			deletedAt, err := time.Parse("2006-01-02 15:04:05", deletedAtStr)
-			if err != nil {
-				log.Printf("Error parsing deleted_at: %v", err)
-				return nil, err
-			}
-			post.DeletedAt = sql.NullTime{Time: deletedAt, Valid: true}
-		} else {
-			post.DeletedAt = sql.NullTime{Valid: false}  // NULL 値
-		}
+        // deletedAtRaw を sql.NullTime に変換
+        if len(deletedAtRaw) > 0 {
+            deletedAtStr := string(deletedAtRaw)
+            deletedAt, err := time.Parse("2006-01-02 15:04:05", deletedAtStr)
+            if err != nil {
+                return nil, 0, err
+            }
+            post.DeletedAt = sql.NullTime{Time: deletedAt, Valid: true}
+        } else {
+            post.DeletedAt = sql.NullTime{Valid: false}
+        }
 
-		// 2. 子ポスト数を取得
-		childPostCount, err := dao.GetChildPostCount(post.PostId)
-		if err != nil {
-			return nil, fmt.Errorf("could not fetch child post count: %w", err)
-		}
+        // 2. 子ポスト数を取得
+        childPostCount, err := dao.GetChildPostCount(post.PostId)
+        if err != nil {
+            return nil, 0, err
+        }
+        post.ReplyCounts = childPostCount
 
-		// 子ポスト数をポスト構造体に設定
-		post.ReplyCounts = childPostCount
+        // 結果を追加
+        posts = append(posts, post)
+    }
 
-		// 結果を追加
-		posts = append(posts, post)
-	}
+    // 2. 総投稿数を取得
+    var totalCount int
+    countQuery := `
+        SELECT COUNT(*) 
+        FROM post p
+        JOIN follower f ON f.following_user_id = p.user_id
+        WHERE f.user_id = ?
+    `
+    err = dao.DB.QueryRow(countQuery, userId).Scan(&totalCount)
+    if err != nil {
+        return nil, 0, err
+    }
 
-	// タイムラインを返す
-	return posts, nil
+    // タイムラインを返す
+    return posts, totalCount, nil
 }
+
 
 func (dao *PostDAO) GetReplyPost(postId string) ([]model.PostWithReplyCounts, error) {
     // 1. 指定されたpostIdをparent_post_idとして持つ投稿を取得

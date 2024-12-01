@@ -4,16 +4,6 @@ import(
 	"database/sql"
 )
 
-// type Post struct {
-// 	PostId string `json:"post_id"`
-// 	UserId string `json:"user_id"`
-// 	Content string `json:"content"`
-// 	CreatedAt time.Time `json:"created_at"`
-// 	EditedAt *time.Time `json:"edited_at"`
-// 	DeletedAt *time.Time `json:"deleted_at"`
-// 	ParentPostId *string `json:"parent_post_id"`
-// }
-
 type Post struct {
 	PostId       string       `json:"post_id"`
 	UserId       string       `json:"user_id"`
