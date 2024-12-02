@@ -75,10 +75,6 @@ import (
 )
 
 func main() {
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT_ID")
-	if projectID == "" {
-		log.Fatal("GOOGLE_CLOUD_PROJECT_ID environment variable is not set")
-	}
 	// DB接続の設定
 	db, err := dao.NewDBConnection()
 	if err != nil {
@@ -93,7 +89,7 @@ func main() {
 	postDAO := dao.NewPostDAO(db)
 
 	// Gemini DAOの初期化
-	client, err := genai.NewClient(context.Background(), projectID, "asia-northeast1")
+	client, err := genai.NewClient(context.Background(), "term6-kyosuke-nishishita", "asia-northeast1")
 	if err != nil {
 		log.Fatal("Failed to create Gemini client: ", err)
 	}
