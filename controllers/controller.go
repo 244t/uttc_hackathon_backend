@@ -58,3 +58,9 @@ func (pc *PostController) RegisterRoutes(r *mux.Router){
 
 	r.HandleFunc("/timeline/{userId}",pc.Timeline).Methods("Get")
 }
+
+// RegisterRoutes は、GeminiControllerのルートをMuxルーターに登録します。
+func (c *GeminiController) RegisterRoutes(r *mux.Router) {
+	r.HandleFunc("/generate-text", c.NextTextGeneration).Methods("POST")
+	r.HandleFunc("/generate-text", c.CORSOptionsHandler).Methods("OPTIONS")
+}
