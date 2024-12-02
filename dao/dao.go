@@ -30,7 +30,7 @@ func NewDBConnection()(*sql.DB,error) {
 	// mysqlUser := "user"
 	// mysqlUserPwd := "password"
 	// mysqlDatabase := "mydatabase"
-	// db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3306)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
+	// db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3307)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
 	// if err != nil {
 	// 	log.Fatalf("fail: sql.Open, %v\n", err)
 	// }
