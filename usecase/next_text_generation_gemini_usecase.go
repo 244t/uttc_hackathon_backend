@@ -1,25 +1,3 @@
-// package usecase
-
-// import (
-// 	"context"
-// 	"myproject/dao"
-// 	"myproject/model"
-// )
-
-// type NextTextGenerationUseCase struct{
-// 	VertexAiDAO dao.VertexAiDAOInterface
-// }
-
-// func NewNextTextGenerationUseCase(v dao.VertexAiDAOInterface) *NextTextGeneration{
-// 	return &NextTextGeneration{
-// 		VertexAiDAO: v,
-// 	}
-// }
-
-// func (uc *NextTextGenerationUseCase) NextTextGeneration(ctx context.Context,text string){
-// 	return usecase.VertexAiDAO.NextTextGeneration(ctx,text)
-// }
-
 package usecase
 
 import (
