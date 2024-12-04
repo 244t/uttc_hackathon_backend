@@ -21,3 +21,15 @@ type TextGenerationRequest struct {
 type TextGenerationResponse struct {
 	SuggestedText string `json:"suggestedText"`
 }
+
+type EmbeddingRequest struct{
+	UserId string `json:"user_id"`
+	Content string `json:"content"`
+}
+
+// 埋め込み結果の構造体
+type EmbeddingResult struct {
+	UserID   string    `json:"user_id"`
+	Count    int       `json:"count"`
+	Embedding []float32 `json:"embedding"`
+}

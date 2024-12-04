@@ -63,4 +63,7 @@ func (pc *PostController) RegisterRoutes(r *mux.Router){
 func (c *GeminiController) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/generate-text", c.NextTextGeneration).Methods("POST")
 	r.HandleFunc("/generate-text", c.CORSOptionsHandler).Methods("OPTIONS")
+
+	r.HandleFunc("/embedding",c.EmbeddingGeneration).Methods("Post")
+	r.HandleFunc("/embedding",c.CORSOptionsHandler).Methods("OPTIONS")
 }

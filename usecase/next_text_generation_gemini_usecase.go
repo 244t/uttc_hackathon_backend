@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"cloud.google.com/go/vertexai/genai"
+	"github.com/google/generative-ai-go/genai"
 	"myproject/dao"
 )
 
