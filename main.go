@@ -71,14 +71,12 @@ import (
 	"os/signal"
 	"syscall"
 	"github.com/gorilla/mux"
-	"cloud.google.com/go/vertexai/genai"
+	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/option"
 )
 
 func main() {
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT_ID")
-	if projectID == "" {
-		log.Fatal("GOOGLE_CLOUD_PROJECT_ID environment variable is not set")
-	}
+
 	// DB接続の設定
 	db, err := dao.NewDBConnection()
 	if err != nil {
@@ -93,7 +91,8 @@ func main() {
 	postDAO := dao.NewPostDAO(db)
 
 	// Gemini DAOの初期化
-	client, err := genai.NewClient(context.Background(), projectID, "asia-northeast1")
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 	if err != nil {
 		log.Fatal("Failed to create Gemini client: ", err)
 	}
