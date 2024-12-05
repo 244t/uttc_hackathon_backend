@@ -4,28 +4,29 @@ import (
 	"errors"
 	"myproject/dao"
 	"myproject/model"
+	"context"
 	"log"
 )
 
 type RegisterUserUseCase struct {
-	TweetDAO dao.TweetDAOInterface
+	VertexAiDAO dao.VertexAiDAOInterface
 }
 
 //RegisterUserUseCaseのファクトリ関数
-func NewRegisterUserUseCase(tweetDao dao.TweetDAOInterface) *RegisterUserUseCase {
+func NewRegisterUserUseCase(v dao.VertexAiDAOInterface) *RegisterUserUseCase {
 	return &RegisterUserUseCase{
-		TweetDAO: tweetDao,
+		VertexAiDAO: v,
 	}
 }
 
-func (uc *RegisterUserUseCase) RegisterUser(ur model.Profile) error{
+func (uc *RegisterUserUseCase) RegisterUser(ctx context.Context,ur model.Profile) error{
 	// 入力のバリデーション
 	if ur.Name == "" || len(ur.Name) > 50  {
 		return errors.New("validation failed: invalid user data")
 	}
 
 	// ユーザーを保存
-	if err := uc.TweetDAO.RegisterUser(ur); err != nil {
+	if err := uc.VertexAiDAO.RegisterUser(ctx,ur); err != nil {
 		log.Printf("failed to save user: %v", err)
 		return err
 	}

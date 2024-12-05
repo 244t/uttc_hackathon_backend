@@ -10,7 +10,6 @@ import (
 )
 
 type UserController struct {
-	RegisterUserUseCase *usecase.RegisterUserUseCase
 	GetProfileUserUseCase *usecase.GetProfileUserUseCase
 	GetFollowingUserUseCase *usecase.GetFollowingUserUseCase
 	GetFollowersUserUseCase *usecase.GetFollowersUserUseCase
@@ -25,7 +24,6 @@ type UserController struct {
 func NewUserController(db dao.TweetDAOInterface) *UserController {
 
 	// UseCaseのインスタンスを作成
-	registerUserUseCase := usecase.NewRegisterUserUseCase(db)
 	getProfileUserUseCase := usecase.NewGetProfileUserUseCase(db)
 	getFollowingUserUseCase := usecase.NewGetFollowingUserUseCase(db)
 	getFollowersUserUseCase := usecase.NewGetFollowersUserUseCase(db)
@@ -38,7 +36,6 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 
 	// UserControllerを作成して返す
 	return &UserController{
-		RegisterUserUseCase: registerUserUseCase,
 		GetProfileUserUseCase: getProfileUserUseCase,
 		GetFollowingUserUseCase: getFollowingUserUseCase,
 		GetFollowersUserUseCase: getFollowersUserUseCase,
@@ -48,22 +45,6 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		GetUserPostsUserUseCase: getUserPostsUserUseCase,
 		SearchUserUseCase : searchUserUseCase,
 	}
-}
-
-// ユーザー登録
-func (c *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var userRegister model.Profile
-	if err := json.NewDecoder(r.Body).Decode(&userRegister); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if err := c.RegisterUserUseCase.RegisterUser(userRegister); err != nil {
-		http.Error(w, "Error registering user", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
 }
 
 // プロフィール取得

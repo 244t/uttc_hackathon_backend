@@ -11,6 +11,7 @@ import (
 
 // GeminiController は、Geminiテキスト生成に関連する処理を行うコントローラーです。
 type GeminiController struct {
+	RegisterUserUseCase *usecase.RegisterUserUseCase
 	NextTextGenerationUseCase *usecase.NextTextGenerationUseCase
 	EmbeddingGenerationUseCase *usecase.EmbeddingGenerationUseCase
 	FindSimilarUseCase *usecase.FindSimilarUseCase
@@ -18,14 +19,31 @@ type GeminiController struct {
 
 // NewGeminiController は、GeminiControllerの新しいインスタンスを作成します。
 func NewGeminiController(db dao.VertexAiDAOInterface) *GeminiController {
+	registerUserUseCase := usecase.NewRegisterUserUseCase(db)
 	nextTextGenerationUseCase := usecase.NewNextTextGenerationUseCase(db)
 	embeddingGenerationUseCase := usecase.NewEmbeddingGenerationUseCase(db)
 	findSimilarUseCase := usecase.NewFindSimilarUseCase(db)
 	return &GeminiController{
+		RegisterUserUseCase: registerUserUseCase,
 		NextTextGenerationUseCase: nextTextGenerationUseCase,
 		EmbeddingGenerationUseCase : embeddingGenerationUseCase,
 		FindSimilarUseCase : findSimilarUseCase,
 	}
+}
+// ユーザー登録
+func (c *GeminiController) CreateUser(w http.ResponseWriter, r *http.Request) {
+	var userRegister model.Profile
+	if err := json.NewDecoder(r.Body).Decode(&userRegister); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	if err := c.RegisterUserUseCase.RegisterUser(ctx,userRegister); err != nil {
+		http.Error(w, "Error registering user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Tweetの続きを生成

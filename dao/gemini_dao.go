@@ -23,6 +23,7 @@ type VertexAiDAO struct {
 }
 
 type VertexAiDAOInterface interface {
+	RegisterUser(ctx context.Context,user model.Profile) error
 	NextTextGeneration(ctx context.Context, text string) (*genai.Part, error)
     EmbeddingGeneration(ctx context.Context, er model.EmbeddingRequest) (error)
 	FindSimilar(ctx context.Context, fs model.FindSimilarRequest) ([]model.Profile,error)
@@ -34,6 +35,18 @@ func NewVertexAiDAO(client *genai.Client, db *sql.DB) *VertexAiDAO {
 		Client: client,
 		DB : db,
 	}
+}
+
+func (dao *VertexAiDAO) RegisterUser(ctx context.Context,user model.Profile) error{
+	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,profile_img_url,header_img_url,location) VALUES (?, ?, ?,?,?,?)", user.Id, user.Name, user.Bio,user.ImgUrl,user.HeaderUrl,user.Location)
+	content := fmt.Sprintf("私は %sです。自己紹介は%s",user.Name, user.Bio)
+
+	er := model.EmbeddingRequest{
+		UserId : user.Id,
+		Content : content,
+	}
+	dao.EmbeddingGeneration(ctx,er)
+	return err
 }
 
 //ツイートの続きを生成する関数
