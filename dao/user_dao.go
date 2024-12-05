@@ -16,7 +16,6 @@ type TweetDAO struct {
 
 type TweetDAOInterface interface{
 	GetChildPostCount(postId string) (int,error)
-	RegisterUser(user model.Profile) error
 	GetUserProfile(userId string) (model.Profile,error)
 	GetFollowing(userId string) ([]model.Profile,error)
 	GetFollowers(userId string)([]model.Profile,error)
@@ -50,11 +49,6 @@ func (dao *TweetDAO) GetChildPostCount(postId string) (int, error) {
 	return count, nil
 }
 
-
-func (dao *TweetDAO) RegisterUser(user model.Profile) error{
-	_ ,err := dao.DB.Exec("INSERT INTO user (user_id, name, bio,profile_img_url,header_img_url,location) VALUES (?, ?, ?,?,?,?)", user.Id, user.Name, user.Bio,user.ImgUrl,user.HeaderUrl,user.Location)
-	return err
-}
 
 //user_idをもとにユーザープロフィールを得る
 func (dao *TweetDAO) GetUserProfile(userId string) (model.Profile, error) {

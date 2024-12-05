@@ -6,8 +6,6 @@ import (
 
 
 func (uc *UserController) RegisterRoutes(r *mux.Router) {
-	r.HandleFunc("/user/register",uc.CreateUser).Methods("POST")
-	r.HandleFunc("/user/register",uc.CORSOptionsHandler).Methods("OPTIONS")
 
 	r.HandleFunc("/user/{userId}",uc.GetUserProfile).Methods("Get")
 
@@ -69,4 +67,7 @@ func (c *GeminiController) RegisterRoutes(r *mux.Router) {
 
 	r.HandleFunc("/find-similar",c.FindSimilar).Methods("Post")
 	r.HandleFunc("/find-similar",c.CORSOptionsHandler).Methods("OPTIONS")
+
+	r.HandleFunc("/user/register",c.CreateUser).Methods("POST")
+	r.HandleFunc("/user/register",c.CORSOptionsHandler).Methods("OPTIONS")
 }
