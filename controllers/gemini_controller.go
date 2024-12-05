@@ -13,15 +13,18 @@ import (
 type GeminiController struct {
 	NextTextGenerationUseCase *usecase.NextTextGenerationUseCase
 	EmbeddingGenerationUseCase *usecase.EmbeddingGenerationUseCase
+	FindSimilarUseCase *usecase.FindSimilarUseCase
 }
 
 // NewGeminiController は、GeminiControllerの新しいインスタンスを作成します。
 func NewGeminiController(db dao.VertexAiDAOInterface) *GeminiController {
 	nextTextGenerationUseCase := usecase.NewNextTextGenerationUseCase(db)
 	embeddingGenerationUseCase := usecase.NewEmbeddingGenerationUseCase(db)
+	findSimilarUseCase := usecase.NewFindSimilarUseCase(db)
 	return &GeminiController{
 		NextTextGenerationUseCase: nextTextGenerationUseCase,
 		EmbeddingGenerationUseCase : embeddingGenerationUseCase,
+		FindSimilarUseCase : findSimilarUseCase,
 	}
 }
 
@@ -58,6 +61,24 @@ func (c *GeminiController) EmbeddingGeneration(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed embedding: %v", err), http.StatusInternalServerError)
 		return
+	}
+}
+
+func (c *GeminiController) FindSimilar(w http.ResponseWriter, r *http.Request){
+	var request model.FindSimilarRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	users, err := c.FindSimilarUseCase.FindSimilar(ctx, request)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to generate text: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
 	}
 }
 

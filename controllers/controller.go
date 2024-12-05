@@ -66,4 +66,7 @@ func (c *GeminiController) RegisterRoutes(r *mux.Router) {
 
 	r.HandleFunc("/embedding",c.EmbeddingGeneration).Methods("Post")
 	r.HandleFunc("/embedding",c.CORSOptionsHandler).Methods("OPTIONS")
+
+	r.HandleFunc("/find-similar",c.FindSimilar).Methods("Post")
+	r.HandleFunc("/find-similar",c.CORSOptionsHandler).Methods("OPTIONS")
 }
