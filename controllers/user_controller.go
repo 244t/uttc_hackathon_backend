@@ -19,6 +19,7 @@ type UserController struct {
 	GetUserPostsUserUseCase *usecase.GetUserPostsUserUseCase
 	SearchUserUseCase *usecase.SearchUserUseCase
 	NotificationUserUseCase *usecase.NotificationUserUseCase
+	DeleteNotificationUserUseCase *usecase.DeleteNotificationUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -34,6 +35,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	getUserPostsUserUseCase := usecase.NewGetUserPostsUserUseCase(db)
 	searchUserUseCase := usecase.NewSearchUserUseCase(db)
 	notificationUserUseCase := usecase.NewNotificationUserUseCase(db)
+	deleteNotificationUserUseCase := usecase.NewDeleteNotificationUserUseCase(db)
 
 
 	// UserControllerを作成して返す
@@ -47,6 +49,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		GetUserPostsUserUseCase: getUserPostsUserUseCase,
 		SearchUserUseCase : searchUserUseCase,
 		NotificationUserUseCase : notificationUserUseCase,
+		DeleteNotificationUserUseCase : deleteNotificationUserUseCase,
 	}
 }
 
@@ -193,6 +196,16 @@ func (c *UserController) Notification(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(notifications)
+}
+
+func (c *UserController) DeleteNotification(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	notificationId := vars["notificationId"]
+	if err := c.DeleteNotificationUserUseCase.DeleteNotification(notificationId); err != nil {
+		http.Error(w, "Error delete notification", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 // OPTIONSリクエストに対する処理

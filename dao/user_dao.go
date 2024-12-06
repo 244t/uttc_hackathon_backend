@@ -25,6 +25,7 @@ type TweetDAOInterface interface{
 	GetUserPosts(userId string) ([]model.PostWithReplyCounts,error)
 	SearchUser(searchWord string)([]model.Profile,error)
 	Notification(userId string) ([]model.NotificationInfo,error)
+	DeleteNotification(ni string)error
 }
 
 
@@ -356,4 +357,31 @@ func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, erro
 
 	// 取得した通知のリストを返す
 	return notifications, nil
+}
+
+func (dao *TweetDAO) DeleteNotification(notificationId string) error {
+	// SQLクエリの準備
+	query := "DELETE FROM notification WHERE notification_id = ?"
+
+	// トランザクションを開始
+	tx, err := dao.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	// クエリの実行
+	_, err = tx.Exec(query, notificationId)
+	if err != nil {
+		// エラーが発生した場合はロールバック
+		tx.Rollback()
+		return fmt.Errorf("failed to delete notification: %w", err)
+	}
+
+	// コミット
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	log.Printf("Notification with ID %s was deleted successfully", notificationId)
+	return nil
 }

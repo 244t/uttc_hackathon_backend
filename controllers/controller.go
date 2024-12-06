@@ -28,6 +28,7 @@ func (uc *UserController) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/user/search",uc.CORSOptionsHandler).Methods("OPTIONS")
 
 	r.HandleFunc("/user/{userId}/notification",uc.Notification).Methods("Get")
+	r.HandleFunc("/user/notification/{notificationId}",uc.DeleteNotification).Methods("DELETE")
 }
 
 func (pc *PostController) RegisterRoutes(r *mux.Router){
