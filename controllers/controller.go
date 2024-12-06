@@ -70,4 +70,6 @@ func (c *GeminiController) RegisterRoutes(r *mux.Router) {
 
 	r.HandleFunc("/user/register",c.CreateUser).Methods("POST")
 	r.HandleFunc("/user/register",c.CORSOptionsHandler).Methods("OPTIONS")
+
+	r.HandleFunc("/user/recommend-user/{userId}",c.RecommendUser).Methods("GET")
 }
