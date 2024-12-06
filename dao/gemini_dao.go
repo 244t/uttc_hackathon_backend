@@ -28,6 +28,7 @@ type VertexAiDAOInterface interface {
     EmbeddingGeneration(ctx context.Context, er model.EmbeddingRequest) (error)
 	FindSimilar(ctx context.Context, fs model.FindSimilarRequest) ([]model.Profile,error)
 	GetUserProfile(userId string) (model.Profile, error)
+	RecommendUser(ctx context.Context,userId string)([]model.Profile,error)
 }
 
 func NewVertexAiDAO(client *genai.Client, db *sql.DB) *VertexAiDAO {
@@ -212,6 +213,134 @@ func (dao *VertexAiDAO) FindSimilar(ctx context.Context, fs model.FindSimilarReq
 
     return similarProfiles, nil
 }
+
+//userIdがフォローしていないと類似したvectorを持つ上位3件くらい
+func (dao *VertexAiDAO) RecommendUser(ctx context.Context,userId string) ([]model.Profile, error) {
+	// 1. userIdがフォローしていないユーザーを取得
+	profiles, err := dao.GetNonFollowedUsers(userId)
+	if err != nil {
+		return nil, fmt.Errorf("could not get non-followed users: %w", err)
+	}
+
+	// 2. userIdの埋め込みベクトルを取得
+	userEmbedding, err := dao.getUserEmbedding(userId)
+	if err != nil {
+		return nil, fmt.Errorf("could not get user embedding: %w", err)
+	}
+
+	// 3. フォローしていないユーザーの中で、最も類似度の高いユーザーを選出
+	var similarities []struct {
+		Profile   model.Profile
+		Similarity float32
+	}
+
+	for _, profile := range profiles {
+		// それぞれのユーザーの埋め込みベクトルを取得
+		profileEmbedding, err := dao.getUserEmbedding(profile.Id)
+		if err != nil {
+			// 埋め込みが取得できない場合はスキップ
+			continue
+		}
+
+		// コサイン類似度を計算
+		similarity, err := cosineSimilarity(userEmbedding, profileEmbedding)
+		if err != nil {
+			// 類似度計算エラーが発生した場合はスキップ
+			continue
+		}
+
+		// 類似度を保存
+		similarities = append(similarities, struct {
+			Profile   model.Profile
+			Similarity float32
+		}{
+			Profile:   profile,
+			Similarity: similarity,
+		})
+	}
+
+	// 4. 類似度でソート
+	sort.Slice(similarities, func(i, j int) bool {
+		return similarities[i].Similarity > similarities[j].Similarity
+	})
+
+	// 上位3件を選出
+	top3Profiles := []model.Profile{}
+	for i := 0; i < 3 && i < len(similarities); i++ {
+		top3Profiles = append(top3Profiles, similarities[i].Profile)
+	}
+
+	// 5. 上位3件のユーザーを返す
+	return top3Profiles, nil
+}
+
+// ユーザーの埋め込みベクトルを取得するメソッド
+func (dao *VertexAiDAO) getUserEmbedding(userId string) ([]float32, error) {
+	// GCSから埋め込みベクトルを取得する
+	bucketName := "term6-kyosuke-nishishita.firebasestorage.app"
+	objectName := fmt.Sprintf("vector/%s.json", userId)
+
+	// GCSに保存されている埋め込みデータを取得
+	embeddingResult, err := getEmbeddingFromGCS(context.Background(), bucketName, objectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get embedding from GCS for userId %s: %w", userId, err)
+	}
+
+	// 埋め込みベクトルを返す
+	return embeddingResult.Embedding, nil
+}
+
+
+// GetNonFollowedUsers メソッドを追加
+func (dao *VertexAiDAO) GetNonFollowedUsers(userId string) ([]model.Profile, error) {
+	// フォローしていないユーザーを取得するSQLクエリ
+	query := `
+		SELECT u.user_id, u.name, u.bio, u.profile_img_url, u.header_img_url, u.location
+		FROM user u
+		WHERE u.user_id != ?  -- 自分自身を除外
+		AND NOT EXISTS (
+			SELECT 1
+			FROM follower f
+			WHERE f.user_id = ? AND f.following_user_id = u.user_id
+		)
+	`
+
+	// フォローしていないユーザーのプロフィールを格納するスライス
+	var profiles []model.Profile
+
+	// データベースから情報を取得
+	rows, err := dao.DB.Query(query, userId, userId)
+	if err != nil {
+		log.Printf("Error fetching non-followed users for userId %s: %v", userId, err)
+		return nil, fmt.Errorf("could not fetch non-followed users: %w", err)
+	}
+	defer rows.Close()
+
+	// 取得した各行を処理
+	for rows.Next() {
+		var profile model.Profile
+		if err := rows.Scan(&profile.Id, &profile.Name, &profile.Bio, &profile.ImgUrl, &profile.HeaderUrl, &profile.Location); err != nil {
+			log.Printf("Error scanning profile for userId %s: %v", userId, err)
+			continue
+		}
+		// プロフィールをスライスに追加
+		profiles = append(profiles, profile)
+	}
+
+	// エラーがあれば返す
+	if err := rows.Err(); err != nil {
+		log.Printf("Error iterating over rows: %v", err)
+		return nil, err
+	}
+
+	// フォローしていないユーザーのプロフィールを返す
+	return profiles, nil
+}
+
+
+
+
+
 
 func (dao *VertexAiDAO) GetUserProfile(userId string) (model.Profile, error) {
 	var prof model.Profile

@@ -6,6 +6,7 @@ import (
 	"myproject/model"
 	"myproject/usecase"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"fmt"
 )
 
@@ -15,6 +16,7 @@ type GeminiController struct {
 	NextTextGenerationUseCase *usecase.NextTextGenerationUseCase
 	EmbeddingGenerationUseCase *usecase.EmbeddingGenerationUseCase
 	FindSimilarUseCase *usecase.FindSimilarUseCase
+	RecommendUserUseCase *usecase.RecommendUserUseCase
 }
 
 // NewGeminiController は、GeminiControllerの新しいインスタンスを作成します。
@@ -23,11 +25,13 @@ func NewGeminiController(db dao.VertexAiDAOInterface) *GeminiController {
 	nextTextGenerationUseCase := usecase.NewNextTextGenerationUseCase(db)
 	embeddingGenerationUseCase := usecase.NewEmbeddingGenerationUseCase(db)
 	findSimilarUseCase := usecase.NewFindSimilarUseCase(db)
+	recommendUserUseCase := usecase.NewRecommendUserUseCase(db)
 	return &GeminiController{
 		RegisterUserUseCase: registerUserUseCase,
 		NextTextGenerationUseCase: nextTextGenerationUseCase,
 		EmbeddingGenerationUseCase : embeddingGenerationUseCase,
 		FindSimilarUseCase : findSimilarUseCase,
+		RecommendUserUseCase : recommendUserUseCase,
 	}
 }
 // ユーザー登録
@@ -91,7 +95,7 @@ func (c *GeminiController) FindSimilar(w http.ResponseWriter, r *http.Request){
 	ctx := r.Context()
 	users, err := c.FindSimilarUseCase.FindSimilar(ctx, request)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to generate text: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to Find Similar: %v", err), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -100,6 +104,20 @@ func (c *GeminiController) FindSimilar(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+func (c *GeminiController) RecommendUser(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+	ctx := r.Context()
+	users, err := c.RecommendUserUseCase.RecommendUser(ctx, userId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to recommend users: %v", err), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+	}
+}
 
 // OPTIONSリクエストに対する処理
 func (c *GeminiController) CORSOptionsHandler(w http.ResponseWriter, r *http.Request) {
