@@ -40,7 +40,7 @@ func (uc *LikePostUseCase) LikePost(l Like) error {
 		NotificationId : ulid.String(),
 		UserId: "",
 		Flag : "like",
-		ActionUserId : "l.UserId",
+		ActionUserId : l.UserId,
 	}
 
 	if err := uc.PostDAO.LikePost(like,notification); err != nil {
