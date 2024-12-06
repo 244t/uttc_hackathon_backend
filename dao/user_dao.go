@@ -19,7 +19,7 @@ type TweetDAOInterface interface{
 	GetUserProfile(userId string) (model.Profile,error)
 	GetFollowing(userId string) ([]model.Profile,error)
 	GetFollowers(userId string)([]model.Profile,error)
-	Follow(follow model.Follow) error
+	Follow(follow model.Follow,n model.Notification) error
 	UnFollow(unfollow model.UnFollow) error
 	UpdateProfile(user model.Profile) error
 	GetUserPosts(userId string) ([]model.PostWithReplyCounts,error)
@@ -144,10 +144,17 @@ func (dao *TweetDAO) GetFollowers(userId string) ([]model.Profile, error) {
 	return profiles, nil
 }
 
-func (dao *TweetDAO) Follow(follow model.Follow) error{
+func (dao *TweetDAO) Follow(follow model.Follow,n model.Notification) error{
 	now := time.Now()
 	_ ,err := dao.DB.Exec("INSERT INTO follower (user_id, following_user_id,created_at) VALUES (?, ?, ?)", follow.UserId,follow.FollowingId,now)
-	return err
+	if err != nil {
+		return fmt.Errorf("could not register follow notification")
+	}
+	_, err = dao.DB.Exec("INSERT INTO notification (notification_id, user_id, flag, action_user_id) VALUES (?, ?, ?, ?)", n.NotificationId, n.UserId, n.Flag, n.ActionUserId)
+    if err != nil {
+        return fmt.Errorf("could not register follow notification: %w", err)
+    }
+	return nil
 }
 
 func (dao *TweetDAO) UnFollow(unfollow model.UnFollow) error {

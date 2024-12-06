@@ -4,6 +4,9 @@ import(
 	"myproject/dao"
 	"myproject/model"
 	"log"
+	"github.com/oklog/ulid"
+	"time"
+	"math/rand"
 )
 
 type FollowRegister struct{
@@ -23,12 +26,23 @@ func NewFollowUserUseCase(tweetDao dao.TweetDAOInterface) *FollowUserUseCase{
 }
 
 func (uc *FollowUserUseCase) Follow(followRegister FollowRegister) error{
+	// ULIDの生成
+	entropy := rand.New(rand.NewSource(time.Now().UnixNano())) // 乱数生成器の作成
+	ulid := ulid.MustNew(ulid.Timestamp(time.Now()), entropy)   // ULID
+
 	follow := model.Follow{
 		UserId: followRegister.UserId,
 		FollowingId: followRegister.FollowingId,
 	}
 
-	if err := uc.TweetDAO.Follow(follow); err != nil {
+	notification := model.Notification{
+		NotificationId : ulid.String(),
+		UserId: follow.FollowingId,
+		Flag : "follow",
+		ActionUserId : follow.UserId,
+	}
+
+	if err := uc.TweetDAO.Follow(follow,notification); err != nil {
 		log.Printf("failed to save follow: %v", err)
 		return err
 	}
