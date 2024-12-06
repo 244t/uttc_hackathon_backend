@@ -342,7 +342,7 @@ func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, erro
 	for rows.Next() {
 		var notification model.NotificationInfo
 		// action_user_idとprofile_imgも取得する
-		if err := rows.Scan(&notification.NotificationId, &notification.Flag, &notification.UserId, &notification.Name,&notification.UserProfileImg); err != nil {
+		if err := rows.Scan(&notification.NotificationId, &notification.Flag, &notification.UserId,&notification.UserProfileImg,&notification.Name); err != nil {
 			return nil, fmt.Errorf("could not scan notification row: %w", err)
 		}
 		// notificationsスライスに追加
