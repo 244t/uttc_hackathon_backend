@@ -20,7 +20,7 @@ type PostDAOInterface interface{
 	UpdatePost(updatepost model.Update) error
 	DeletePost(deletePost model.Delete) error
 	GetReplyPost(postId string)([]model.PostWithReplyCounts,error)
-	LikePost(l model.Like) error
+	LikePost(l model.Like, n model.Notification) error
 	UnLikePost(u model.Like) error
 	GetLikesPost(postId string) ([]string,error)
 	Timeline(userId string) ([]model.PostWithReplyCounts,error)
@@ -169,26 +169,54 @@ func (dao *PostDAO) DeletePost(deletePost model.Delete)error{
 	return err
 }
 
-func (dao *PostDAO) LikePost(l model.Like) error{
-	_ ,err := dao.DB.Exec("INSERT INTO `like` (post_id, user_id,created_at) VALUES (?, ?, ?)", l.PostId,l.UserId,l.CreatedAt)
-	return err
+// func (dao *PostDAO) LikePost(l model.Like, n model.Notification) error {
+//     // Insert like into the database
+//     _, err := dao.DB.Exec("INSERT INTO `like` (post_id, user_id, created_at) VALUES (?, ?, ?)", l.PostId, l.UserId, l.CreatedAt)
+//     if err != nil {
+//         return fmt.Errorf("could not like post: %w", err)
+//     }
+
+//     // Insert notification into the database
+//     _, err = dao.DB.Exec("INSERT INTO notification (notification_id, user_id, flag, action_user_id) VALUES (?, ?, ?, ?)", n.NotificationId, n.UserId, n.Flag, n.ActionUserId)
+//     if err != nil {
+//         return fmt.Errorf("could not create notification: %w", err)
+//     }
+
+//     return nil
+// }
+func (dao *PostDAO) LikePost(l model.Like, n model.Notification) error {
+    // Insert like into the database
+    _, err := dao.DB.Exec("INSERT INTO `like` (post_id, user_id, created_at) VALUES (?, ?, ?)", l.PostId, l.UserId, l.CreatedAt)
+    if err != nil {
+        return fmt.Errorf("could not like post: %w", err)
+    }
+
+    // Retrieve the user_id from the post table based on post_id
+    var postUserId string
+    err = dao.DB.QueryRow("SELECT user_id FROM post WHERE post_id = ?", l.PostId).Scan(&postUserId)
+    if err != nil {
+        return fmt.Errorf("could not retrieve user_id from post: %w", err)
+    }
+
+    // Update n.UserId with the retrieved user_id from the post
+    n.UserId = postUserId
+
+    // Insert notification into the database
+    _, err = dao.DB.Exec("INSERT INTO notification (notification_id, user_id, flag, action_user_id) VALUES (?, ?, ?, ?)", n.NotificationId, n.UserId, n.Flag, n.ActionUserId)
+    if err != nil {
+        return fmt.Errorf("could not create notification: %w", err)
+    }
+
+    return nil
 }
+
+
 
 func (dao *PostDAO) UnLikePost(u model.Like) error{
 	_, err := dao.DB.Exec("DELETE FROM `like` WHERE post_id = ? AND user_id = ?", u.PostId, u.UserId)
     return err 
 }
 
-// func (dao *PostDAO) GetLikesPost (postId string) (model.Likes,error) {
-// 	var l model.Likes
-// 	query := "SELECT COUNT(*) FROM `like` WHERE post_id = ?"
-// 	err := dao.DB.QueryRow(query, postId).Scan(&l.Likes)
-// 	if err != nil {
-// 		fmt.Errorf("error executing query: %w", err)
-//         return model.Likes{}, err
-//     }
-// 	return l,nil
-// }
 func (dao *PostDAO) GetLikesPost(postId string) ([]string, error) {
     // user_idを格納するスライス
     var userIds []string

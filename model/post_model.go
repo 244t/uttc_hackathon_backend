@@ -33,6 +33,13 @@ type Like struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Notification struct {
+	UserId string `json:"user_id"`
+	NotificationId string `json:"notification_id"`
+	Flag string `json:"flag"`
+	ActionUserId string `"json:action_user_id"`
+}
+
 type Likes struct {
 	Likes []string `json:"user_ids"`
 }
