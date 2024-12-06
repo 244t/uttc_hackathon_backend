@@ -325,7 +325,7 @@ func (dao *TweetDAO) SearchUser(sw string) ([]model.Profile, error) {
 func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, error) {
 	// notificationテーブルからuserIdと一致するすべての行を取得
 	rows, err := dao.DB.Query(`
-		SELECT n.notification_id, n.flag, n.action_user_id, u.profile_img_url
+		SELECT n.notification_id, n.flag, n.action_user_id, u.profile_img_url, u.name
 		FROM notification n
 		LEFT JOIN user u ON n.action_user_id = u.user_id
 		WHERE n.user_id = ?`, userId)
@@ -342,7 +342,7 @@ func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, erro
 	for rows.Next() {
 		var notification model.NotificationInfo
 		// action_user_idとprofile_imgも取得する
-		if err := rows.Scan(&notification.NotificationId, &notification.Flag, &notification.UserId, &notification.UserProfileImg); err != nil {
+		if err := rows.Scan(&notification.NotificationId, &notification.Flag, &notification.UserId, &notification.Name,&notification.UserProfileImg); err != nil {
 			return nil, fmt.Errorf("could not scan notification row: %w", err)
 		}
 		// notificationsスライスに追加
@@ -352,11 +352,6 @@ func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, erro
 	// 結果の確認
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
-	}
-
-	// 取得した通知のリストをログにプリント
-	for _, notification := range notifications {
-		log.Printf("Notification ID: %s, Flag: %s, User ID: %s, Profile Img: %s", notification.NotificationId, notification.Flag, notification.UserId, notification.UserProfileImg)
 	}
 
 	// 取得した通知のリストを返す
