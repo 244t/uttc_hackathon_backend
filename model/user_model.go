@@ -21,6 +21,7 @@ type UnFollow struct{
 
 type NotificationInfo struct{
 	UserId string `json:"user_id"`
+	Name string `json:"name"`
 	Flag string `json:"flag"`
 	UserProfileImg string `json:"profile_img"`
 	NotificationId string `json:"notification_id"`
