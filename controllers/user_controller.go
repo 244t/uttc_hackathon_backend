@@ -18,6 +18,7 @@ type UserController struct {
 	UpdateProfileUserUseCase *usecase.UpdateProfileUserUseCase
 	GetUserPostsUserUseCase *usecase.GetUserPostsUserUseCase
 	SearchUserUseCase *usecase.SearchUserUseCase
+	NotificationUserUseCase *usecase.NotificationUserUseCase
 }
 
 // NewUserControllerはUserControllerのインスタンスを返します。
@@ -32,6 +33,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 	updateProfileUserUSeCase := usecase.NewUpdateProfileUserUseCase(db)
 	getUserPostsUserUseCase := usecase.NewGetUserPostsUserUseCase(db)
 	searchUserUseCase := usecase.NewSearchUserUseCase(db)
+	notificationUserUseCase := usecase.NewNotificationUserUseCase(db)
 
 
 	// UserControllerを作成して返す
@@ -44,6 +46,7 @@ func NewUserController(db dao.TweetDAOInterface) *UserController {
 		UpdateProfileUserUseCase: updateProfileUserUSeCase,
 		GetUserPostsUserUseCase: getUserPostsUserUseCase,
 		SearchUserUseCase : searchUserUseCase,
+		NotificationUserUseCase : notificationUserUseCase,
 	}
 }
 
@@ -176,6 +179,20 @@ func (c *UserController) SearchUser(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func (c *UserController) Notification(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	notifications, err := c.NotificationUserUseCase.Notification(userId)
+	if err != nil {
+		http.Error(w, "Error fetching notification", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(notifications)
 }
 
 // OPTIONSリクエストに対する処理

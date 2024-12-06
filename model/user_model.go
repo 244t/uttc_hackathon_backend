@@ -18,3 +18,10 @@ type UnFollow struct{
 	UserId string `json:"user_id"`
 	FollowingId string `json:"following_id"`
 }
+
+type NotificationInfo struct{
+	UserId string `json:"user_id"`
+	Flag string `json:"flag"`
+	UserProfileImg string `json:"profile_img"`
+	NotificationId string `json:"notification_id"`
+}

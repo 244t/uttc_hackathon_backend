@@ -24,6 +24,7 @@ type TweetDAOInterface interface{
 	UpdateProfile(user model.Profile) error
 	GetUserPosts(userId string) ([]model.PostWithReplyCounts,error)
 	SearchUser(searchWord string)([]model.Profile,error)
+	Notification(userId string) ([]model.NotificationInfo,error)
 }
 
 
@@ -319,4 +320,38 @@ func (dao *TweetDAO) SearchUser(sw string) ([]model.Profile, error) {
 
     // 検索結果のユーザーのプロフィールを返す
     return profiles, nil
+}
+
+func (dao *TweetDAO) Notification(userId string) ([]model.NotificationInfo, error) {
+	// notificationテーブルからuserIdと一致するすべての行を取得
+	rows, err := dao.DB.Query(`
+		SELECT n.notification_id, n.flag, n.action_user_id, u.profile_img
+		FROM notification n
+		LEFT JOIN user u ON n.action_user_id = u.user_id
+		WHERE n.user_id = ?`, userId)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not fetch notifications: %w", err)
+	}
+	defer rows.Close()
+
+	// 結果を格納するスライス
+	var notifications []model.NotificationInfo
+
+	// クエリの結果を構造体にマッピング
+	for rows.Next() {
+		var notification model.NotificationInfo
+		if err := rows.Scan(&notification.NotificationId, &notification.Flag, &notification.UserId, &notification.UserProfileImg); err != nil {
+			return nil, fmt.Errorf("could not scan notification row: %w", err)
+		}
+		notifications = append(notifications, notification)
+	}
+
+	// 結果の確認
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during rows iteration: %w", err)
+	}
+
+	// 取得した通知のリストを返す
+	return notifications, nil
 }
