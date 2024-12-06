@@ -26,7 +26,7 @@ func NewDBConnection()(*sql.DB,error) {
 	}
 	return db,nil
 
-	////localとつなげるとき
+	//localとつなげるとき
 	// mysqlUser := "user"
 	// mysqlUserPwd := "password"
 	// mysqlDatabase := "mydatabase"
